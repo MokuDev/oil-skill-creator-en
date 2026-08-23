@@ -44,10 +44,10 @@
 <python> <oil-skill-creator>/scripts/prepare_evaluation.py . --mode improve --iteration 1
 ```
 
-`improve` 模式会检查 Skill 同级 workspace 中的 `skill-snapshot`。每轮使用一个新的 `iteration-N` 目录，程序拒绝覆盖已有目录，并生成下面的结构：
+`improve` 模式会检查外部 workspace 中的 `skill-snapshot`。Skill 位于名为 `skills` 的扫描目录时，默认 workspace 是该目录同级的 `skill-workspaces/<skill-name>-workspace/`，避免快照被识别成重复 Skill。每轮使用一个新的 `iteration-N` 目录，程序拒绝覆盖已有目录，并生成下面的结构：
 
 ```text
-<skill-name>-workspace/
+<workspace>/
 ├── skill-snapshot/               # 仅整改模式
 └── iteration-N/
     ├── run_plan.json

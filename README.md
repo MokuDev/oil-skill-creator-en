@@ -28,17 +28,21 @@ Review 默认不修改文件。只有明确要求整改时，才会保存快照�
 
 ## 安装
 
-克隆到当前 Agent 实际扫描的 Skill 目录：
+### 让 Agent 安装
 
-```shell
-git clone https://github.com/oil-oil/oil-skill-creator.git <skills-root>/oil-skill-creator
-```
-
-也可以下载仓库后，将整个目录复制到：
+复制下面的仓库地址，告诉你正在使用的 Agent：“请帮我安装这个 Skill。”
 
 ```text
-<skills-root>/oil-skill-creator/
+https://github.com/oil-oil/oil-skill-creator
 ```
+
+### 使用命令安装
+
+```shell
+npx skills add oil-oil/oil-skill-creator
+```
+
+该安装方式需要本机能够运行 `npx`，但 Node.js 不是 Skill 的运行依赖。
 
 核心脚本要求 Python 3.10 或更高版本，只使用标准库，无需安装额外依赖，也不需要密钥或初始化配置。
 

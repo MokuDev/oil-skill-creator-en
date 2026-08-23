@@ -10,11 +10,11 @@ from pathlib import Path
 
 try:
     from .evaluation_common import validate_eval_set
-    from .snapshot_skill import verify_snapshot
+    from .snapshot_skill import default_workspace, verify_snapshot
     from .validate_skill import parse_frontmatter
 except ImportError:
     from evaluation_common import validate_eval_set
-    from snapshot_skill import verify_snapshot
+    from snapshot_skill import default_workspace, verify_snapshot
     from validate_skill import parse_frontmatter
 
 
@@ -51,7 +51,7 @@ def build_evaluation_plan(
     workspace_path = (
         Path(workspace).expanduser().resolve()
         if workspace is not None
-        else skill.parent / f"{name}-workspace"
+        else default_workspace(skill, name)
     )
     eval_path = (
         Path(eval_set).expanduser().resolve()
@@ -195,7 +195,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="create 与普通 Agent 比较；improve 与整改前快照比较",
     )
     parser.add_argument("--iteration", type=int, required=True, help="评估轮次，从 1 开始")
-    parser.add_argument("--workspace", help="评估工作目录，默认在 Skill 同级")
+    parser.add_argument(
+        "--workspace",
+        help="评估工作目录；Skill 位于 skills 扫描目录时，默认使用其同级的 skill-workspaces",
+    )
     parser.add_argument("--eval-set", help="evals.json 路径，默认读取目标 Skill")
     parser.add_argument("--repetitions", type=int, default=1, help="每种配置运行次数")
     parser.add_argument("--dry-run", action="store_true", help="只显示计划，不写入")

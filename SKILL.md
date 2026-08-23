@@ -64,7 +64,7 @@ Review 默认只读，不创建快照、不修改、不打包。整改禁止用�
 <python> <oil-skill-creator>/scripts/snapshot_skill.py <skill-path>
 ```
 
-快照默认进入 Skill 同级的 `<skill-name>-workspace/skill-snapshot/`。脚本拒绝覆盖已有快照；后续基线只能指向该快照，不能指向正在编辑的目录。
+快照默认进入外部 workspace。目标位于名为 `skills` 的扫描目录时，workspace 放到该目录同级的 `skill-workspaces/`，避免快照被识别成重复 Skill。脚本拒绝覆盖已有快照；后续基线只能指向该快照，不能指向正在编辑的目录。
 
 按 P0、P1、P2 报告证据、影响、成因、通用修复方法和验证方式。忽略不影响行为的措辞偏好，不把合理取舍当成缺陷。
 
@@ -146,7 +146,7 @@ Skill 不得包含与 description 不一致的隐藏行为、误导能力、越�
 
 ## 兼容与发布
 
-发布前读 [兼容性](references/compatibility.md) 和 [GitHub 发布](references/publishing.md)。README 面向使用者，说明价值、安装、配置、兼容范围、数据边界和输出，不复制 Agent 的内部执行步骤。
+发布前读 [兼容性](references/compatibility.md) 和 [GitHub 发布](references/publishing.md)。README 面向使用者，说明价值、安装、配置、兼容范围、数据边界和输出，不复制 Agent 的内部执行步骤。GitHub 安装部分同时提供“把仓库地址交给 Agent”和 `npx skills add` 两个入口。
 
 严格校验通过后打包：
 

@@ -90,6 +90,16 @@ class EvaluationToolsTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 snapshot_skill(skill)
 
+    def test_snapshot_avoids_named_skills_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            skill = make_valid_skill(root / "skills")
+            payload = snapshot_skill(skill)
+            self.assertEqual(
+                Path(str(payload["snapshot"])).resolve(),
+                (root / "skill-workspaces" / "sample-skill-workspace" / "skill-snapshot").resolve(),
+            )
+
     def test_prepare_uses_canonical_configuration_names(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

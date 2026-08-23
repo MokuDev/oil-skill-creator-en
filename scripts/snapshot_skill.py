@@ -44,6 +44,14 @@ def _included_files(skill_path: Path) -> list[Path]:
     return files
 
 
+def default_workspace(skill_path: Path, name: str) -> Path:
+    """返回不会落入常见 Skill 扫描目录的默认 workspace。"""
+    parent = skill_path.parent
+    if parent.name.lower() == "skills":
+        return parent.parent / "skill-workspaces" / f"{name}-workspace"
+    return parent / f"{name}-workspace"
+
+
 def _digest(skill_path: Path, files: list[Path]) -> str:
     checksum = hashlib.sha256()
     for path in files:
@@ -94,7 +102,7 @@ def snapshot_skill(
     workspace_path = (
         Path(workspace).expanduser().resolve()
         if workspace is not None
-        else source.parent / f"{name}-workspace"
+        else default_workspace(source, name)
     )
     destination = workspace_path / "skill-snapshot"
     metadata = workspace_path / "snapshot.json"
@@ -129,7 +137,10 @@ def snapshot_skill(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="整改前创建不再修改的旧版 Skill 快照")
     parser.add_argument("skill_path", help="已有 Skill 目录")
-    parser.add_argument("--workspace", help="工作目录，默认在 Skill 同级")
+    parser.add_argument(
+        "--workspace",
+        help="工作目录；Skill 位于 skills 扫描目录时，默认使用其同级的 skill-workspaces",
+    )
     parser.add_argument("--dry-run", action="store_true", help="只显示计划，不写入")
     parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
     return parser

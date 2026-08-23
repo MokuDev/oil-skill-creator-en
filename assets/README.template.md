@@ -8,7 +8,12 @@ __SUMMARY__
 
 ## 安装
 
-说明应复制或克隆到哪个 Skill 目录，以及安装前需要具备的条件。
+提供两种安装方式：
+
+1. 给出完整 GitHub 仓库地址，让用户可以复制地址并告诉 Agent 安装这个 Skill。
+2. 给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>` 命令。
+
+说明两种方式各自需要的条件。`npx` 只属于安装工具时，不要把 Node.js 写成 Skill 的运行依赖。
 
 ## 配置
 

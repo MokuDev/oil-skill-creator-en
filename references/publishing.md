@@ -16,6 +16,15 @@
 
 没有配置时也应明确写“无需额外配置”，不要直接省略。README 面向人，SKILL.md 面向 Agent；可以互相链接，但不要复制整段执行规范。
 
+## 安装说明
+
+公开 GitHub 仓库的 README 默认提供两个安装入口，并把最容易使用的方式放在前面：
+
+1. **让 Agent 安装**：给出完整仓库地址，并提供一句可以直接复制的自然语言，例如“请帮我安装这个 Skill：`https://github.com/<owner>/<repository>`”。
+2. **使用命令安装**：给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>`。
+
+命令必须与仓库实际结构一致，并在发布前验证。`npx` 只属于可选安装方式；如果它需要 Node.js，不要把 Node.js 误写成 Skill 本身的运行依赖。实测不支持命令安装时，不要放置失效命令，应说明原因并提供手动安装方式。
+
 ## 可选的 README 设计增强
 
 确认内容、安装命令、兼容性和数据边界以后，如果用户还希望改善 GitHub 首页，可以使用 [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme)。它可以调整整份 README，也可以只制作首页主视觉、章节标题或流程图。
@@ -44,7 +53,7 @@
 - SKILL.md 没有历史案例、个人路径和修改记录；
 - 所有本地资源链接存在；
 - 确定、重复并且必做的流程已写成脚本，并有回归测试；
-- README 讲清价值、配置、使用和兼容性；
+- README 讲清价值、安装、配置、使用和兼容性；GitHub 仓库提供 Agent 安装和命令安装入口；
 - README 与 SKILL.md 没有复制同一套执行说明；
 - references 都能从 SKILL.md 的资源导航按需到达，没有孤立文档；
 - 面向较弱模型时，已通过严格结构检查和目标模型试跑；

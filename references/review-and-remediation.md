@@ -78,7 +78,7 @@ Review 判断一个 Skill 是否值得保留、是否能稳定完成它承诺的
 - 已运行与未运行的验证；
 - 需要用户决定的主观或产品取舍。
 
-Review 报告放在对话或 Skill 同级 workspace，不进入正式 Skill。不要写入具体候选、单次修复叙述或版本历史。
+Review 报告放在对话或外部 workspace，不进入 Skill 扫描目录和正式 Skill。不要写入具体候选、单次修复叙述或版本历史。
 
 ## 整改现有 Skill
 

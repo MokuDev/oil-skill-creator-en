@@ -47,7 +47,9 @@ __SUMMARY__
 
 ## 安装
 
-说明安装目录和依赖。
+给出完整 GitHub 仓库地址，让用户可以把地址交给 Agent 安装。
+
+给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>` 命令，并说明安装条件。
 
 ## 配置
 

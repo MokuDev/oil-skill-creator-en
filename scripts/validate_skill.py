@@ -833,6 +833,18 @@ def _normalize_heading(text: str) -> str:
     return re.sub(r"[\s`*_—–-]+", "", text).lower()
 
 
+def _markdown_section(text: str, markers: tuple[str, ...]) -> str:
+    headings = list(re.finditer(r"^#{1,4}\s+(.+?)\s*$", text, re.MULTILINE))
+    normalized_markers = tuple(_normalize_heading(marker) for marker in markers)
+    for index, heading in enumerate(headings):
+        normalized = _normalize_heading(heading.group(1))
+        if not any(marker in normalized for marker in normalized_markers):
+            continue
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(text)
+        return text[heading.end() : end]
+    return ""
+
+
 def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
     readme = skill_path / "README.md"
     if not readme.is_file():
@@ -894,6 +906,30 @@ def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
             "README 没有单独说明适用边界、数据或权限",
             "README.md",
         )
+
+    install_section = _markdown_section(
+        text, ("安装", "install", "快速开始", "quickstart")
+    )
+    github_repository = re.search(
+        r"https?://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?",
+        install_section,
+        re.IGNORECASE,
+    )
+    if github_repository:
+        if not re.search(r"\b(?:agent|ai)\b|智能体|助手", install_section, re.IGNORECASE):
+            report.add(
+                "warning",
+                "readme.install-agent-missing",
+                "GitHub 安装说明没有提供把仓库地址交给 Agent 的入口",
+                "README.md",
+            )
+        if not re.search(r"\bnpx\s+skills\s+add\b", install_section, re.IGNORECASE):
+            report.add(
+                "warning",
+                "readme.install-command-missing",
+                "GitHub 安装说明没有提供 npx skills add 命令",
+                "README.md",
+            )
 
 
 def _check_eval_schema(skill_path: Path, name: str, report: AuditReport) -> None:

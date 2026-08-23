@@ -24,7 +24,11 @@ VALID_README = """# sample-skill
 说明价值。
 
 ## 安装
-说明安装。
+把仓库地址交给 Agent 安装：
+
+https://github.com/example/sample-skill
+
+也可以使用 `npx skills add example/sample-skill`。
 
 ## 配置
 无需额外配置。
@@ -146,6 +150,36 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             (skill / "README.md").write_text("# sample-skill\n", encoding="utf-8")
             report = audit_skill(skill, public=True)
             self.assertIn("readme.section-missing", {item.code for item in report.errors})
+
+    def test_github_readme_requires_agent_install_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            skill = make_valid_skill(Path(temporary))
+            readme = (skill / "README.md").read_text(encoding="utf-8")
+            (skill / "README.md").write_text(
+                readme.replace("把仓库地址交给 Agent 安装：\n\n", ""),
+                encoding="utf-8",
+            )
+            report = audit_skill(skill, public=True)
+            self.assertIn(
+                "readme.install-agent-missing",
+                {item.code for item in report.warnings},
+            )
+
+    def test_github_readme_requires_npx_install_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            skill = make_valid_skill(Path(temporary))
+            readme = (skill / "README.md").read_text(encoding="utf-8")
+            (skill / "README.md").write_text(
+                readme.replace(
+                    "\n也可以使用 `npx skills add example/sample-skill`。\n", "\n"
+                ),
+                encoding="utf-8",
+            )
+            report = audit_skill(skill, public=True)
+            self.assertIn(
+                "readme.install-command-missing",
+                {item.code for item in report.warnings},
+            )
 
     def test_embedded_secret_is_an_error(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
