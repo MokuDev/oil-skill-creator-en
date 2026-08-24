@@ -4,8 +4,6 @@ The test modules import `scripts.*` from the Skill root. Make that root
 importable regardless of the working directory the tests are started from.
 """
 
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 

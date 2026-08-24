@@ -490,6 +490,29 @@ def _local_markdown_targets(
     return targets
 
 
+def _check_empty_directories(skill_path: Path, report: AuditReport) -> None:
+    """Flag directories that hold no file at any depth.
+
+    An empty directory carries no read entry, execution entry or user purpose, and
+    version control does not even keep it, so it only makes the Skill look complete.
+    """
+
+    for directory in sorted(skill_path.rglob("*")):
+        if not directory.is_dir():
+            continue
+        relative_parts = directory.relative_to(skill_path).parts
+        if any(part in SKIP_DIRS for part in relative_parts):
+            continue
+        if any(item.is_file() for item in directory.rglob("*")):
+            continue
+        report.add(
+            "warning",
+            "layer.empty-directory",
+            "directory holds no file; add the resource it is meant to carry or remove it",
+            _relative(skill_path, directory),
+        )
+
+
 def _check_information_architecture(
     skill_path: Path,
     skill_md: Path,
@@ -1149,6 +1172,7 @@ def audit_skill(
         if file_path.suffix.lower() == ".md"
     }
     _check_information_architecture(path, skill_md, body, markdown_texts, report)
+    _check_empty_directories(path, report)
     _check_duplicate_markdown(path, body, markdown_texts, report)
     _check_markdown_content(path, body, markdown_texts, report)
     if universal:

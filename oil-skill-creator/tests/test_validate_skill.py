@@ -454,5 +454,31 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             )
 
 
+class EmptyDirectoryTests(unittest.TestCase):
+    def _write_skill(self, root: Path) -> Path:
+        skill = root / "sample-skill"
+        skill.mkdir()
+        (skill / "SKILL.md").write_text(VALID_SKILL, encoding="utf-8")
+        return skill
+
+    def test_empty_directory_is_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            skill = self._write_skill(Path(temporary))
+            (skill / "assets").mkdir()
+            report = audit_skill(skill)
+            codes = {finding.code for finding in report.warnings}
+            self.assertIn("layer.empty-directory", codes)
+
+    def test_directory_with_a_nested_file_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            skill = self._write_skill(Path(temporary))
+            nested = skill / "assets" / "pages"
+            nested.mkdir(parents=True)
+            (nested / "review.html").write_text("<p>page</p>\n", encoding="utf-8")
+            report = audit_skill(skill)
+            codes = {finding.code for finding in report.warnings}
+            self.assertNotIn("layer.empty-directory", codes)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 try:
@@ -15,6 +16,39 @@ except ImportError:  # Use same-package import when script is run directly.
 
 
 ALLOWED_COMPONENTS = {"scripts", "references", "assets", "tests", "evals"}
+# Components that only make sense once they hold real content are not created as
+# empty directories; the author adds them with the first file that has a purpose.
+CONTENT_ONLY_COMPONENTS = {"references", "assets"}
+
+SCRIPTS_INIT_TEMPLATE = '"""Deterministic helper programs shipped with {name}."""\n'
+TESTS_INIT_TEMPLATE = '''"""Tests for the helper programs of {name}.
+
+The test modules import `scripts.*` from the Skill root. Make that root
+importable regardless of the working directory the tests are started from.
+"""
+
+import sys
+from pathlib import Path
+
+_SKILL_ROOT = str(Path(__file__).resolve().parent.parent)
+if _SKILL_ROOT not in sys.path:
+    sys.path.insert(0, _SKILL_ROOT)
+'''
+
+
+def _render_eval_set(name: str) -> str:
+    return json.dumps({"skill_name": name, "evals": []}, ensure_ascii=False, indent=2) + "\n"
+
+
+# Every component that is not content-only is created together with this entry file
+# and its content; a new component has to be listed here or in CONTENT_ONLY_COMPONENTS,
+# otherwise creation fails loudly instead of writing the wrong boilerplate.
+COMPONENT_ENTRIES: dict[str, tuple[str, Callable[[str], str]]] = {
+    "scripts": ("__init__.py", lambda name: SCRIPTS_INIT_TEMPLATE.format(name=name)),
+    "tests": ("__init__.py", lambda name: TESTS_INIT_TEMPLATE.format(name=name)),
+    "evals": ("evals.json", _render_eval_set),
+}
+
 SKILL_TEMPLATE = """---
 name: {name}
 description: {description}
@@ -101,12 +135,25 @@ def planned_paths(
     paths = [target / "SKILL.md"]
     if public:
         paths.append(target / "README.md")
-    for component in sorted(components):
-        if component == "evals":
-            paths.append(target / "evals" / "evals.json")
-        else:
-            paths.append(target / component)
+    for component in sorted(components - CONTENT_ONLY_COMPONENTS):
+        paths.append(target / component / _component_entry(component, name)[0])
     return paths
+
+
+def _component_entry(component: str, name: str) -> tuple[str, str]:
+    """Return the file name and content that make a component directory real."""
+
+    try:
+        file_name, render = COMPONENT_ENTRIES[component]
+    except KeyError:
+        raise ValueError(f"component has no entry file defined: {component}") from None
+    return file_name, render(name)
+
+
+def deferred_components(components: set[str]) -> list[str]:
+    """Requested components that are left to the author instead of created empty."""
+
+    return sorted(components & CONTENT_ONLY_COMPONENTS)
 
 
 def create_skill(
@@ -150,16 +197,11 @@ def create_skill(
         )
         (target / "README.md").write_text(readme, encoding="utf-8", newline="\n")
 
-    for component in sorted(component_set):
+    for component in sorted(component_set - CONTENT_ONLY_COMPONENTS):
         component_dir = target / component
         component_dir.mkdir()
-        if component == "evals":
-            evals = {"skill_name": name, "evals": []}
-            (component_dir / "evals.json").write_text(
-                json.dumps(evals, ensure_ascii=False, indent=2) + "\n",
-                encoding="utf-8",
-                newline="\n",
-            )
+        file_name, content = _component_entry(component, name)
+        (component_dir / file_name).write_text(content, encoding="utf-8", newline="\n")
 
     return target, paths
 
@@ -176,7 +218,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--components",
         default="",
-        help="comma-separated components to create on demand: scripts,references,assets,tests,evals",
+        help=(
+            "comma-separated components to create on demand: scripts,references,assets,tests,evals; "
+            "references and assets are left to the author instead of being created empty"
+        ),
     )
     parser.add_argument("--public", action="store_true", help="also generate README.md")
     parser.add_argument("--dry-run", action="store_true", help="only show the plan, do not write")
@@ -200,10 +245,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
+    deferred = deferred_components(components)
     payload = {
         "status": "dry-run" if args.dry_run else "created",
         "target": str(target),
         "paths": [str(path) for path in paths],
+        "deferred_components": deferred,
     }
     if args.as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
@@ -212,6 +259,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{status}: {target}")
         for path in paths:
             print(f"- {path}")
+        if deferred:
+            print(
+                "not created, add the first file that has a purpose yourself: "
+                + ", ".join(deferred)
+            )
     return 0
 
 
