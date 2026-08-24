@@ -18,6 +18,9 @@ ALLOWED_COMPONENTS = {"scripts", "references", "assets", "tests", "evals"}
 # Components that only make sense once they hold real content are not created as
 # empty directories; the author adds them with the first file that has a purpose.
 CONTENT_ONLY_COMPONENTS = {"references", "assets"}
+# Every other component is created together with this entry file; a new component
+# has to be listed here or in CONTENT_ONLY_COMPONENTS, otherwise creation fails loudly.
+COMPONENT_ENTRY_FILES = {"scripts": "__init__.py", "tests": "__init__.py", "evals": "evals.json"}
 
 SCRIPTS_INIT_TEMPLATE = '"""Deterministic helper programs shipped with {name}."""\n'
 TESTS_INIT_TEMPLATE = '''"""Tests for the helper programs of {name}.
@@ -25,8 +28,6 @@ TESTS_INIT_TEMPLATE = '''"""Tests for the helper programs of {name}.
 The test modules import `scripts.*` from the Skill root. Make that root
 importable regardless of the working directory the tests are started from.
 """
-
-from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -127,7 +128,21 @@ def planned_paths(
 
 
 def _component_entry_name(component: str) -> str:
-    return "evals.json" if component == "evals" else "__init__.py"
+    try:
+        return COMPONENT_ENTRY_FILES[component]
+    except KeyError:
+        raise ValueError(f"component has no entry file defined: {component}") from None
+
+
+def _component_entry_content(component: str, name: str) -> str:
+    if component == "evals":
+        payload = {"skill_name": name, "evals": []}
+        return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    if component == "scripts":
+        return SCRIPTS_INIT_TEMPLATE.format(name=name)
+    if component == "tests":
+        return TESTS_INIT_TEMPLATE.format(name=name)
+    raise ValueError(f"component has no entry content defined: {component}")
 
 
 def deferred_components(components: set[str]) -> list[str]:
@@ -180,15 +195,8 @@ def create_skill(
     for component in sorted(component_set - CONTENT_ONLY_COMPONENTS):
         component_dir = target / component
         component_dir.mkdir()
-        if component == "evals":
-            evals = {"skill_name": name, "evals": []}
-            content = json.dumps(evals, ensure_ascii=False, indent=2) + "\n"
-        elif component == "scripts":
-            content = SCRIPTS_INIT_TEMPLATE.format(name=name)
-        else:
-            content = TESTS_INIT_TEMPLATE.format(name=name)
         (component_dir / _component_entry_name(component)).write_text(
-            content, encoding="utf-8", newline="\n"
+            _component_entry_content(component, name), encoding="utf-8", newline="\n"
         )
 
     return target, paths

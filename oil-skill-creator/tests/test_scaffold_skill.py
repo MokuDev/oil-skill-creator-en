@@ -5,7 +5,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.scaffold_skill import create_skill, deferred_components
+from scripts.scaffold_skill import (
+    ALLOWED_COMPONENTS,
+    CONTENT_ONLY_COMPONENTS,
+    COMPONENT_ENTRY_FILES,
+    create_skill,
+    deferred_components,
+)
 
 
 class ScaffoldSkillTests(unittest.TestCase):
@@ -59,6 +65,25 @@ class ScaffoldSkillTests(unittest.TestCase):
                 deferred_components({"references", "assets", "evals"}),
                 ["assets", "references"],
             )
+
+    def test_every_component_is_either_content_only_or_has_an_entry_file(self) -> None:
+        self.assertEqual(
+            ALLOWED_COMPONENTS,
+            CONTENT_ONLY_COMPONENTS | set(COMPONENT_ENTRY_FILES),
+        )
+
+    def test_generated_tests_package_imports_cleanly(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            target, _ = create_skill(
+                temporary,
+                "compiled-skill",
+                "Run stable workflows. Use when the user asks for a fixed artifact; do not trigger on ordinary questions.",
+                components={"scripts", "tests"},
+            )
+            for module in (target / "scripts" / "__init__.py", target / "tests" / "__init__.py"):
+                source = module.read_text(encoding="utf-8")
+                compile(source, str(module), "exec")
+                self.assertNotIn("from __future__ import annotations", source)
 
     def test_dry_run_does_not_write(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
