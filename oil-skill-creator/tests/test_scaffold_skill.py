@@ -8,7 +8,8 @@ from pathlib import Path
 from scripts.scaffold_skill import (
     ALLOWED_COMPONENTS,
     CONTENT_ONLY_COMPONENTS,
-    COMPONENT_ENTRY_FILES,
+    COMPONENT_ENTRIES,
+    _component_entry,
     create_skill,
     deferred_components,
 )
@@ -66,11 +67,19 @@ class ScaffoldSkillTests(unittest.TestCase):
                 ["assets", "references"],
             )
 
-    def test_every_component_is_either_content_only_or_has_an_entry_file(self) -> None:
+    def test_every_component_is_either_content_only_or_renders_an_entry(self) -> None:
         self.assertEqual(
             ALLOWED_COMPONENTS,
-            CONTENT_ONLY_COMPONENTS | set(COMPONENT_ENTRY_FILES),
+            CONTENT_ONLY_COMPONENTS | set(COMPONENT_ENTRIES),
         )
+        for component in COMPONENT_ENTRIES:
+            file_name, content = _component_entry(component, "sample-skill")
+            self.assertTrue(file_name)
+            self.assertTrue(content.strip())
+
+    def test_unknown_component_has_no_entry(self) -> None:
+        with self.assertRaises(ValueError):
+            _component_entry("schemas", "sample-skill")
 
     def test_generated_tests_package_imports_cleanly(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

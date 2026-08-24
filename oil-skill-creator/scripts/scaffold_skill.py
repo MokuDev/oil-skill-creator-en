@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 try:
@@ -18,9 +19,6 @@ ALLOWED_COMPONENTS = {"scripts", "references", "assets", "tests", "evals"}
 # Components that only make sense once they hold real content are not created as
 # empty directories; the author adds them with the first file that has a purpose.
 CONTENT_ONLY_COMPONENTS = {"references", "assets"}
-# Every other component is created together with this entry file; a new component
-# has to be listed here or in CONTENT_ONLY_COMPONENTS, otherwise creation fails loudly.
-COMPONENT_ENTRY_FILES = {"scripts": "__init__.py", "tests": "__init__.py", "evals": "evals.json"}
 
 SCRIPTS_INIT_TEMPLATE = '"""Deterministic helper programs shipped with {name}."""\n'
 TESTS_INIT_TEMPLATE = '''"""Tests for the helper programs of {name}.
@@ -36,6 +34,21 @@ _SKILL_ROOT = str(Path(__file__).resolve().parent.parent)
 if _SKILL_ROOT not in sys.path:
     sys.path.insert(0, _SKILL_ROOT)
 '''
+
+
+def _render_eval_set(name: str) -> str:
+    return json.dumps({"skill_name": name, "evals": []}, ensure_ascii=False, indent=2) + "\n"
+
+
+# Every component that is not content-only is created together with this entry file
+# and its content; a new component has to be listed here or in CONTENT_ONLY_COMPONENTS,
+# otherwise creation fails loudly instead of writing the wrong boilerplate.
+COMPONENT_ENTRIES: dict[str, tuple[str, Callable[[str], str]]] = {
+    "scripts": ("__init__.py", lambda name: SCRIPTS_INIT_TEMPLATE.format(name=name)),
+    "tests": ("__init__.py", lambda name: TESTS_INIT_TEMPLATE.format(name=name)),
+    "evals": ("evals.json", _render_eval_set),
+}
+
 SKILL_TEMPLATE = """---
 name: {name}
 description: {description}
@@ -123,26 +136,18 @@ def planned_paths(
     if public:
         paths.append(target / "README.md")
     for component in sorted(components - CONTENT_ONLY_COMPONENTS):
-        paths.append(target / component / _component_entry_name(component))
+        paths.append(target / component / _component_entry(component, name)[0])
     return paths
 
 
-def _component_entry_name(component: str) -> str:
+def _component_entry(component: str, name: str) -> tuple[str, str]:
+    """Return the file name and content that make a component directory real."""
+
     try:
-        return COMPONENT_ENTRY_FILES[component]
+        file_name, render = COMPONENT_ENTRIES[component]
     except KeyError:
         raise ValueError(f"component has no entry file defined: {component}") from None
-
-
-def _component_entry_content(component: str, name: str) -> str:
-    if component == "evals":
-        payload = {"skill_name": name, "evals": []}
-        return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-    if component == "scripts":
-        return SCRIPTS_INIT_TEMPLATE.format(name=name)
-    if component == "tests":
-        return TESTS_INIT_TEMPLATE.format(name=name)
-    raise ValueError(f"component has no entry content defined: {component}")
+    return file_name, render(name)
 
 
 def deferred_components(components: set[str]) -> list[str]:
@@ -195,9 +200,8 @@ def create_skill(
     for component in sorted(component_set - CONTENT_ONLY_COMPONENTS):
         component_dir = target / component
         component_dir.mkdir()
-        (component_dir / _component_entry_name(component)).write_text(
-            _component_entry_content(component, name), encoding="utf-8", newline="\n"
-        )
+        file_name, content = _component_entry(component, name)
+        (component_dir / file_name).write_text(content, encoding="utf-8", newline="\n")
 
     return target, paths
 
