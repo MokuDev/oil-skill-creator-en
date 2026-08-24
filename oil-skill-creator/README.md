@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="./assets/readme/hero.png" width="100%" alt="oil-skill-creator: build Skills like products">
-</p>
+# oil-skill-creator
 
 `oil-skill-creator` is used to create, review, remediate and publish Agent Skills. What it cares about is not whether the docs are written, but whether the Skill is worth installing, whether it runs reliably, whether it stays usable by weaker models, and whether real design causes can be found when results disappoint.
 
@@ -160,6 +158,8 @@ The scripts use `pathlib` and UTF-8 and do not depend on bash, PowerShell, Homeb
 <python> -m unittest discover -s tests -v
 <python> scripts/validate_skill.py . --public --strict --weak-model --universal
 ```
+
+Run both commands from this Skill directory. The tests also run from a parent directory with `<python> -m unittest discover -s <skill-path>/tests -t .`.
 
 Tests cover file protection, snapshots, basic structure, resource links, secrets, host neutrality, content duplication, weak-model structure, outcome evaluation, trigger tests and repeatable packaging.
 
