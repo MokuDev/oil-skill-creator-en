@@ -1,0 +1,68 @@
+{
+  "skill_name": "oil-skill-creator",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-public-skill",
+      "prompt": "Turn a recurring, deterministic, easy-to-miss-steps local file processing workflow into a publicly publishable Skill. First decide which steps should be scripted, then deliver a complete Skill package.",
+      "expected_output": "First confirm the Skill is worth creating, write deterministic steps as cross-platform scripts, and handle first use, similar tasks that should not trigger, README, tests and validation.",
+      "files": [],
+      "expectations": [
+        "Clearly separates Agent judgement from program execution",
+        "The public README explains the value, configuration, usage and compatibility",
+        "Checks weak-model readability, file layering and cross-document duplication",
+        "Does not write specific past tasks or change logs into SKILL.md"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "review-subjective-skill",
+      "prompt": "I already have a Skill that leans on visual and copy style. Please evaluate whether it is genuinely effective and optimize it, but do not let AI score its own aesthetic results.",
+      "expected_output": "Triggering and execution are performed by an independent sub-Agent, the program checks explicit requirements, and humans complete the subjective review without knowing the version identity, then consolidate the feedback into reusable rules.",
+      "files": [],
+      "expectations": [
+        "Does not substitute AI subjective scoring for human review",
+        "Requires an independent sub-Agent to actually load the Skill",
+        "Objective constraints and subjective quality are reported separately"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "remediate-existing-skill",
+      "prompt": "Audit a Skill being prepared for GitHub: first-time configuration is awkward, it has only run on the author's machine, and SKILL.md mixes in fix notes from several past incidents.",
+      "expected_output": "Check usage value, first-time configuration, personal paths, platform assumptions, the README and change logs; deliver a reusable fix; and document the compatibility scope honestly.",
+      "files": [],
+      "expectations": [
+        "Does not equate static checks with cross-platform real testing",
+        "Historical notes are moved to Git or an external workspace",
+        "Deterministic checks are performed by programs"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "readonly-review-stop",
+      "prompt": "Review this existing Skill: assess whether weak models can understand it, and find the parts that do not match its release promises. Only deliver a report; do not modify, package, or create new files.",
+      "expected_output": "After fully reading, run read-only checks first; for P0, P1, P2 list evidence, impact, root cause, minimum remediation and verification method; and stop after the report is submitted.",
+      "files": [],
+      "expectations": [
+        "Does not silently upgrade Review into Remediate",
+        "Separates confirmed defects, reasonable trade-offs and unverified risks",
+        "Every issue includes evidence and a verification method to prevent recurrence",
+        "Does not report behavior-irrelevant issues based on personal preference"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "remediate-rule-tree",
+      "prompt": "Remediate a Skill that has accumulated specific conditions and exception branches from past failures. Make it more stable without hardcoding more individual cases.",
+      "expected_output": "First use execution evidence to judge whether the failure is caused by the Skill; then collapse individual patches into goals, judgement principles and the main flow; program only finite, objective, stable steps.",
+      "files": [],
+      "expectations": [
+        "Distinguishes Skill defects, insufficient input, execution drift and external capability limits",
+        "Removes or merges per-task branches that do not generalize",
+        "Semantic and subjective judgement are not disguised as deterministic code",
+        "Regression uses the original failure type together with normal main-flow cases"
+      ]
+    }
+  ]
+}
