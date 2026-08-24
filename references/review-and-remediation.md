@@ -1,96 +1,96 @@
-# Review 与整改规范
+# Review and remediation specification
 
-## Review 的目标
+## What Review is for
 
-Review 判断一个 Skill 是否值得保留、是否能稳定完成它承诺的任务，以及哪些问题需要整改。它不只检查格式，也不能把评审者的个人偏好写成强制规范。
+Review judges whether a Skill is worth keeping, whether it can reliably do what it promises, and which problems need remediation. It does not only check formatting, and it must not promote the reviewer's personal preferences into enforced rules.
 
-默认只读。除非用户明确要求整改，否则不要修改文件、创建快照、运行发布或改变外部状态。
+Read-only by default. Unless the user explicitly asks for remediation, do not modify files, create snapshots, publish, or change any external state.
 
-## 检查顺序
+## Inspection order
 
-1. 读取完整 `SKILL.md`，确认 description 的承诺和反向边界。
-2. 按资源导航读取相关 references、scripts、tests、evals 和 README。
-3. 运行 `scripts/validate_skill.py`，先收集可程序确认的问题。
-4. 检查程序无法判断的问题：Skill 是否有用、流程是否合理、主观质量如何，以及兼容性是否真实。
-5. 将已确认缺陷、合理取舍和未验证风险分开报告。
+1. Read `SKILL.md` in full. Confirm the description's promises and reverse boundaries.
+2. Follow the resource navigation to load the relevant `references`, `scripts`, `tests`, `evals` and the README.
+3. Run `scripts/validate_skill.py` to harvest the issues a program can confirm.
+4. Inspect what a program cannot judge: whether the Skill is useful, whether the flow is sound, how the subjective quality holds up, and whether compatibility claims are real.
+5. Report confirmed defects, reasonable trade-offs and unverified risks separately.
 
-不要因为目录多、文字长或实现方式不同就直接判错。只有确认它会造成误触发、遗漏步骤、不稳定、额外 Token、平台失败、无法验证或理解困难时，才报告为问题。
+Do not rule against a Skill just because it has many directories, lots of text, or an unusual implementation. Only report a problem when you are sure it causes false triggers, missed steps, instability, extra tokens, platform failure, unverifiability or comprehension difficulty.
 
-## Review 维度
+## Review dimensions
 
-| 维度 | 核心问题 |
+| Dimension | Core question |
 | --- | --- |
-| 产品价值 | 相比普通 Agent 是否有能看到或测量的改善，是否值得安装和维护 |
-| 触发边界 | 应触发的请求、不应触发的相似请求，以及与其他 Skill 的分工是否清楚 |
-| 主流程 | 模式、顺序、分支、停止条件和恢复入口是否完整 |
-| 是否过度约束 | 是否提供流程和判断原则，而不是用具体案例和大量分支代替上下文判断 |
-| 程序化 | 确定且必做的步骤是否仍交给 Agent 临时决定 |
-| 产物与界面 | 大型产物是否难以稳定生成和局部修改；复杂配置或人工预览是否仍靠对话或临时生成页面完成 |
-| Onboarding | 可静默准备的是否自动完成，高风险动作是否确认 |
-| 稳定性 | 重复运行是否安全，是否拒绝误覆盖、保留中间产物并支持恢复 |
-| 效果证据 | 是否有真实触发、基线、检查结果、耗时、Token 和人类评审 |
-| 弱模型 | 能否一次理解入口、分支、术语和资源读取时机 |
-| 分层与 Token | 每类规则是否只放一处、是否按需读取、是否存在空目录和无入口资源 |
-| 兼容性 | 平台、宿主、依赖、路径、Shell 和回退是否如实声明 |
-| 宿主中立 | 是否把当前宿主的品牌、目录、命令或私有能力误写成通用流程 |
-| README | 是否讲清价值、安装、配置、使用、数据和边界 |
-| 安全与凭据 | 行为是否符合 description；是否写死个人目录、提交明文密钥、使用高风险凭据文件，或让密钥进入日志和 Agent 上下文 |
+| Product value | Is there an observable or measurable improvement over a regular Agent; is it worth installing and maintaining |
+| Trigger and boundaries | Are the should-trigger requests, the confusing should-not-trigger requests, and the division of labor with other Skills clear |
+| Main flow | Are the modes, ordering, branches, stop conditions and recovery entry points complete |
+| Over-constraint | Does it offer a flow and judgement principles, rather than replacing contextual judgement with case lists and many branches |
+| Programmable | Are deterministic and mandatory steps still being improvised by the Agent |
+| Artifacts and UI | Are large artifacts hard to generate reliably or edit locally; are complex configuration or human preview still handled through dialogue or ad-hoc pages |
+| Onboarding | Is reversible, auto-discoverable preparation done silently, and are high-risk actions confirmed |
+| Stability | Are repeated runs safe; does it refuse accidental overwrite, keep intermediates, support recovery |
+| Outcome evidence | Is there real triggering data, baselines, check results, duration, tokens and human review |
+| Weak model | Can the entry, branches, terminology and resource reads be understood in one pass |
+| Layering and tokens | Does each rule live in exactly one place; are references read on demand; are there empty directories or resources without an entry point |
+| Compatibility | Are platforms, hosts, dependencies, paths, shells and fallbacks declared honestly |
+| Host neutrality | Does the Skill mistake the current host's brand, directories, commands or private capabilities for a generic flow |
+| README | Does it explain value, installation, configuration, usage, data and boundaries |
+| Security and credentials | Does behavior match the description; are personal paths hardcoded, plaintext secrets committed, high-risk credential files used, or secrets allowed into logs and Agent context |
 
-## 严重级别
+## Severity levels
 
-- **P0**：会破坏核心结果、安全、数据、权限或可恢复性，或者让主要流程无法执行。整改前不得发布。
-- **P1**：在常见场景造成错误、明显退步、误触发、结果不稳定或较高维护成本。应在当前整改中处理。
-- **P2**：不会阻断核心流程，但会增加理解、Token、兼容性或维护风险。可以以后处理。
+- **P0**: breaks the core result, security, data, permissions, or recoverability, or makes the main flow unrunnable. Must not ship before remediation.
+- **P1**: causes errors, clear regressions, false triggers, result instability or noticeably higher maintenance cost in common scenarios. Handle in the current remediation.
+- **P2**: does not block the core flow, but raises comprehension, token, compatibility or maintenance risk. May be handled later.
 
-不影响行为的措辞偏好不算问题。无法确认时标记“未验证”，不要为了填满 P0、P1、P2 强行定级。
+Wording preferences that do not change behavior are not defects. When you cannot confirm, mark "unverified"; do not force-rank to fill P0/P1/P2.
 
-## 证据要求
+## Evidence requirements
 
-每个问题包含：
+Each issue includes:
 
-1. 简短标题和严重级别；
-2. 文件、章节、命令输出或能够重复出现的行为；
-3. 对用户、Agent、平台或发布结果的影响；
-4. 导致问题的规范、默认值、接口或验证缺口；
-5. 最小且可复用的整改方法；
-6. 能证明问题不会再次出现的校验或测试。
+1. A short title and severity level;
+2. The file, section, command output or recurring behavior that proves it;
+3. The impact on users, Agent, platform or release;
+4. The rule, default, interface or verification gap that produced it;
+5. The minimum reusable fix;
+6. A check or test that proves the issue will not reappear.
 
-新增校验规则时，从真实入口构造文件或数据，证明规则在完整调用链中可达；不要只测试脱离入口的正则或函数。
+When adding a check rule, construct files or data starting from a real entry point and prove the rule is reachable along the full call chain; do not only test a regex or function detached from any entry.
 
-区分三种结论：
+Distinguish three conclusion types:
 
-- **已确认缺陷**：现有文件或运行证据可以直接证明；
-- **合理取舍**：与目标和兼容范围一致，不需要为了统一风格而修改；
-- **未验证风险**：缺少真实平台、宿主、弱模型或用户反馈证据。
+- **Confirmed defect**: existing files or runtime evidence prove it directly;
+- **Reasonable trade-off**: aligns with goal and compatibility scope; no need to change for the sake of stylistic uniformity;
+- **Unverified risk**: missing real platform, host, weak-model or user-feedback evidence.
 
-只有核心功能确实依赖某个宿主时，才能写明宿主品牌。此时必须把专用适配内容与通用流程分开，并说明不兼容范围。
+Only write a host's brand when the core function genuinely depends on it. In that case, split the host-only content from the generic flow and document the incompatible scope.
 
-当前会话使用了某个宿主，不代表应该把它写入规则。
+Using a host in the current session does not mean it should be written into the rules.
 
-## Review 输出
+## Review output
 
-先给一句总体结论，再按 P0、P1、P2 输出问题。没有某级问题时明确写“无”，不要用总结或优点填充。
+Lead with a one-sentence overall judgement, then list P0/P1/P2 issues. When a level has no issues, explicitly write "none" — do not pad with summary or praise.
 
-随后列出：
+Follow up with:
 
-- 值得保留的能力；
-- 整改顺序和依赖关系；
-- 已运行与未运行的验证；
-- 需要用户决定的主观或产品取舍。
+- Capabilities worth keeping;
+- Remediation order and dependencies;
+- Validation that has run and has not;
+- Subjective or product trade-offs that need the user's call.
 
-Review 报告放在对话或外部 workspace，不进入 Skill 扫描目录和正式 Skill。不要写入具体候选、单次修复叙述或版本历史。
+The Review report lives in the dialogue or the external workspace; it does not enter the Skill scan directory or the formal Skill. Do not write specific candidates, single-fix narratives, or version histories.
 
-## 整改现有 Skill
+## Remediating an existing Skill
 
-整改是 Review 后的独立写入阶段：
+Remediation is the write phase after Review:
 
-1. 检查工作区和现有用户改动，避免覆盖无关内容。
-2. 第一次编辑前运行 `scripts/snapshot_skill.py`。
-3. 先修 P0，再修 P1；P2 只处理与当前目标有关的项目。
-4. 优先修改根因所在的规范、程序接口、默认值或测试，不只修表面结果。
-5. 能用程序稳定完成的步骤写成脚本并补回归测试；语义或主观问题改判断原则，不硬编码成分支。
-6. 保留原名称和有效资源；没有必要时不重建目录、不整份重写。
-7. 运行静态校验、相关程序测试和效果对照。
-8. 只把当前有效规则写回 Skill；评审过程和前后差异留在 workspace 或 Git。
+1. Inspect the workspace and existing user changes; avoid overwriting unrelated content.
+2. Before the first edit, run `scripts/snapshot_skill.py`.
+3. Fix P0 first, then P1; P2 only when it serves the current goal.
+4. Prefer fixing the underlying rule, program interface, default or test that caused the symptom, not only the surface result.
+5. Steps stable enough for a program become scripts plus regression tests; semantic or subjective problems become judgement principles, never hardcoded branches.
+6. Keep the original name and valid resources; do not rebuild directories or rewrite the whole thing without need.
+7. Run static validation, the relevant program tests, and the outcome comparison.
+8. Only the currently valid rules get written back into the Skill; the review process and before/after diffs stay in the workspace or Git.
 
-若用户只授权部分整改，报告剩余问题和影响，不擅自扩大范围。若修复需要新权限、外部服务、破坏性操作或产品方向选择，先请求授权。
+If the user only authorized partial remediation, report remaining issues and impact and do not widen scope on your own. If a fix needs new permissions, external services, destructive operations, or a product-direction choice, ask for authorization first.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""创建最小 Skill 目录，并拒绝覆盖已有文件。"""
+"""Create a minimal Skill directory, refusing to overwrite existing files."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pathlib import Path
 
 try:
     from .validate_skill import NAME_RE
-except ImportError:  # 直接运行脚本时使用同目录导入。
+except ImportError:  # Use same-package import when script is run directly.
     from validate_skill import NAME_RE
 
 
@@ -22,54 +22,54 @@ description: {description}
 
 # {name}
 
-## 目标
+## Goal
 
-TODO：说明这个 Skill 为谁解决什么重复问题，以及使用后能看到或测量到什么改善。
+TODO: describe which recurring problem this Skill solves for the user, and what observable or measurable improvement they get from using it.
 
-## 工作流
+## Workflow
 
-TODO：只保留必须作出的判断、关键分支和必须执行的步骤。结果固定并且需要重复运行的步骤放进 scripts。
+TODO: keep only the judgements, key branches and steps that must run. Steps with fixed results that need to be repeated belong in scripts/.
 
-## 输出
+## Output
 
-TODO：说明最终交付物、保存位置和完成后需要汇报的内容。
+TODO: describe the final deliverable, where it is saved, and what should be reported when done.
 
-## 资源导航
+## Resource navigation
 
-TODO：只列出实际存在的按需资源及其读取时机。
+TODO: list only the on-demand resources that actually exist and when they should be read.
 """
 
 README_FALLBACK = """# __SKILL_NAME__
 
-## 有什么用
+## What it is for
 
 __SUMMARY__
 
-## 安装
+## Installation
 
-给出完整 GitHub 仓库地址，让用户可以把地址交给 Agent 安装。
+Provide the full GitHub repo URL, so users can copy the address and tell the Agent to install this Skill.
 
-给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>` 命令，并说明安装条件。
+Provide the `npx skills add <owner>/<repository>` command with `<owner>/<repository>` already replaced by the real values, and describe the install requirements.
 
-## 配置
+## Configuration
 
-说明首次配置；没有配置时明确写“无需额外配置”。
+Describe the first-time configuration. When no configuration is needed, state "no extra configuration required" explicitly.
 
-## 使用
+## Usage
 
-说明如何用自然语言触发，不复制 SKILL.md 的内部流程。
+Describe how to trigger it in natural language; do not copy the internal flow from SKILL.md.
 
-## 兼容性与依赖
+## Compatibility and dependencies
 
-列出已验证平台、运行环境、系统命令和宿主必须提供的能力。
+List the verified platforms, runtime environment, system commands and capabilities the host must provide.
 
-## 数据与适用边界
+## Data and applicable scope
 
-说明外部服务、权限、隐私、费用和不适用场景。
+Describe external services, permissions, privacy, cost and out-of-scope scenarios.
 
-## 测试
+## Testing
 
-说明如何运行程序测试和 Skill 效果评估。
+Describe how to run program tests and Skill outcome evaluation.
 """
 
 
@@ -79,7 +79,7 @@ def _parse_components(value: str) -> set[str]:
     components = {item.strip() for item in value.split(",") if item.strip()}
     unknown = sorted(components - ALLOWED_COMPONENTS)
     if unknown:
-        raise ValueError("不支持的组件：" + ", ".join(unknown))
+        raise ValueError("unsupported components: " + ", ".join(unknown))
     return components
 
 
@@ -118,22 +118,22 @@ def create_skill(
     dry_run: bool = False,
 ) -> tuple[Path, list[Path]]:
     if not NAME_RE.fullmatch(name) or len(name) > 64:
-        raise ValueError("name 必须是 64 字符以内的 kebab-case")
+        raise ValueError("name must be a kebab-case string of at most 64 characters")
     if not description.strip():
-        raise ValueError("description 不能为空")
+        raise ValueError("description cannot be empty")
     if len(description) > 1024 or "<" in description or ">" in description:
-        raise ValueError("description 不能超过 1024 字符或包含尖括号")
+        raise ValueError("description must be at most 1024 characters and must not contain angle brackets")
 
     component_set = set(components or set())
     unknown = sorted(component_set - ALLOWED_COMPONENTS)
     if unknown:
-        raise ValueError("不支持的组件：" + ", ".join(unknown))
+        raise ValueError("unsupported components: " + ", ".join(unknown))
 
     root = Path(output_root).expanduser().resolve()
     target = root / name
     paths = planned_paths(root, name, component_set, public)
     if target.exists():
-        raise FileExistsError(f"目标目录已存在，拒绝覆盖：{target}")
+        raise FileExistsError(f"target directory already exists, refusing to overwrite: {target}")
     if dry_run:
         return target, paths
 
@@ -165,22 +165,22 @@ def create_skill(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="安全创建最小 Skill 骨架")
-    parser.add_argument("name", help="kebab-case Skill 名称")
-    parser.add_argument("--output-root", required=True, help="Skill 父目录")
+    parser = argparse.ArgumentParser(description="Safely create a minimal Skill skeleton")
+    parser.add_argument("name", help="kebab-case Skill name")
+    parser.add_argument("--output-root", required=True, help="parent directory for the Skill")
     parser.add_argument(
         "--description",
-        default="TODO：说明做什么、何时触发，以及哪些相似任务不要触发。",
-        help="SKILL.md 顶部的触发说明",
+        default="TODO: describe what it does, when to trigger it, and which similar tasks should not trigger it.",
+        help="trigger description at the top of SKILL.md",
     )
     parser.add_argument(
         "--components",
         default="",
-        help="按需创建的逗号分隔组件：scripts,references,assets,tests,evals",
+        help="comma-separated components to create on demand: scripts,references,assets,tests,evals",
     )
-    parser.add_argument("--public", action="store_true", help="同时生成 README.md")
-    parser.add_argument("--dry-run", action="store_true", help="只显示计划，不写入")
-    parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
+    parser.add_argument("--public", action="store_true", help="also generate README.md")
+    parser.add_argument("--dry-run", action="store_true", help="only show the plan, do not write")
+    parser.add_argument("--json", action="store_true", dest="as_json", help="emit JSON output")
     return parser
 
 
@@ -208,8 +208,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        status = "仅预览" if payload["status"] == "dry-run" else "已创建"
-        print(f"{status}：{target}")
+        status = "preview only" if payload["status"] == "dry-run" else "created"
+        print(f"{status}: {target}")
         for path in paths:
             print(f"- {path}")
     return 0

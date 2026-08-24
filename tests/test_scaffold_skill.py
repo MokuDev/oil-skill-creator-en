@@ -14,7 +14,7 @@ class ScaffoldSkillTests(unittest.TestCase):
             target, _ = create_skill(
                 temporary,
                 "sample-skill",
-                "处理稳定工作流。当用户要求创建固定产物时使用；普通问答不要触发。",
+                "Run stable workflows. Use when the user asks for a fixed artifact; do not trigger on ordinary questions.",
                 components={"scripts", "evals"},
                 public=True,
             )
@@ -32,7 +32,7 @@ class ScaffoldSkillTests(unittest.TestCase):
             target, paths = create_skill(
                 temporary,
                 "dry-run-skill",
-                "创建稳定结果。当用户需要该流程时使用；普通任务不要触发。",
+                "Produce stable results. Use when the user needs this flow; do not trigger on ordinary tasks.",
                 components={"tests"},
                 dry_run=True,
             )
@@ -47,7 +47,7 @@ class ScaffoldSkillTests(unittest.TestCase):
                 create_skill(
                     temporary,
                     "existing-skill",
-                    "当用户需要时使用；普通任务不要触发。",
+                    "Use when the user needs it; do not trigger on ordinary tasks.",
                 )
 
     def test_rejects_invalid_name(self) -> None:
@@ -56,7 +56,7 @@ class ScaffoldSkillTests(unittest.TestCase):
                 create_skill(
                     temporary,
                     "Invalid_Name",
-                    "当用户需要时使用；普通任务不要触发。",
+                    "Use when the user needs it; do not trigger on ordinary tasks.",
                 )
 
 

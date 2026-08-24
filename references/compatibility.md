@@ -1,109 +1,109 @@
-# 兼容性与运行边界
+# Compatibility and runtime boundaries
 
-本文件用于设计和 Review 目标 Skill。它规定目标 Skill 应满足的跨平台与凭据边界；`oil-skill-creator` 负责检查设计和已知静态风险，不代替目标 Skill 实现业务运行时或系统凭据适配器。
+This file is for designing and Reviewing the target Skill. It lays out the cross-platform and credential boundaries the target Skill should meet; `oil-skill-creator` is responsible for checking the design and known static risks, and does not stand in for the target Skill's business runtime or system-credential adapter.
 
-## 需要检查的兼容范围
+## Compatibility scope to verify
 
-分别核对：
+Check each item:
 
-- 操作系统：macOS、Windows、Linux；
-- Agent 宿主：是否能启动子 Agent，是否提供浏览器、图像、音视频或图形界面能力；
-- 运行时：Python、Node、Java 或系统工具版本；
-- Shell：bash、zsh、PowerShell、cmd；
-- 文件系统：路径分隔符、大小写、权限、符号链接和换行；
-- 外部服务：网络、认证、地区、费用和速率限制。
+- Operating systems: macOS, Windows, Linux;
+- Agent host: can it launch sub-Agents, does it provide browser, image, audio/video or GUI capability;
+- Runtime: Python, Node, Java or system tool versions;
+- Shell: bash, zsh, PowerShell, cmd;
+- Filesystem: path separator, case sensitivity, permissions, symlinks and line endings;
+- External services: network, authentication, region, cost and rate limits.
 
-只声明实际验证过的平台。未验证的平台写“未验证”；依赖特定能力时，说明缺少该能力可以改用什么方法。
+State only the platforms you have actually verified. Unverified platforms get "unverified". When a capability is required, explain what to substitute when it is missing.
 
-## 宿主中立
+## Host neutrality
 
-- 默认把 Skill 写成任何具备所需能力的 Agent 宿主都能理解的形式。
-- 核心流程使用能力描述，不使用宿主品牌、专属工具名、专属配置目录或私有命令代替能力定义。
-- 通过实际检查判断宿主是否提供子 Agent、浏览器、图形界面、文件系统或统计数据，不根据宿主名称猜测。
-- 宿主专用的元数据或适配器要与 `SKILL.md` 核心流程分开；删除适配器后，通用能力仍应成立。
-- 产品本身确实只服务一个宿主时，明确标记“宿主专用”，说明原因和不支持范围，不伪装成通用 Skill。
+- By default, write a Skill that any Agent host with the required capability can understand.
+- Core flow uses capability descriptions. Do not substitute host brand names, proprietary tool names, proprietary config directories or private commands for capability descriptions.
+- Use real checks to decide whether the host offers sub-Agent, browser, GUI, filesystem or statistics support; do not guess from the host's name.
+- Host-specific metadata or adapters must be separated from `SKILL.md`'s core flow; after removing the adapter the generic capability should still stand.
+- When the product genuinely only serves one host, mark "host-only" explicitly, explain why and what is not supported, and do not pretend to be a generic Skill.
 
-## 跨平台脚本规则
+## Cross-platform scripting rules
 
-- 优先使用 Python 3 标准库和 `pathlib`。
-- 调用当前 Python 时使用 `sys.executable`，不要猜 `python3` 的位置。
-- 第一次运行时检查 `sys.version_info >= (3, 10)`；命令行文档同时说明 macOS/Linux 的 `python3` 与 Windows 的 `py -3` 入口。
-- `subprocess` 传参数列表，不拼接 Shell 字符串。
-- 明确使用 UTF-8 读写文本。
-- 临时文件使用系统临时目录。
-- 不在程序中写死 `/Users/...`、`~/.config` 或 `C:\\Users\\...`。
-- 用户配置位置通过环境变量、平台目录或明确参数解析。
-- 不依赖 `open`、`brew`、`which`、`chmod` 等单平台命令完成核心流程。
-- 必须使用平台脚本时，将实现拆分并在入口处检测能力。
+- Prefer the Python 3 standard library and `pathlib`.
+- Use `sys.executable` when invoking the current Python; do not guess the `python3` path.
+- On first run, check `sys.version_info >= (3, 10)`; the command-line docs should mention `python3` on macOS/Linux and `py -3` on Windows.
+- Pass argument lists to `subprocess`; never concatenate Shell strings.
+- Read and write text with UTF-8 explicitly.
+- Use the system temp directory for temp files.
+- Do not hardcode `/Users/...`, `~/.config` or `C:\\Users\\...` in programs.
+- Resolve user-config paths through env vars, platform directories or explicit parameters.
+- Do not rely on `open`, `brew`, `which`, `chmod` or other single-platform commands for the core flow.
+- When platform-specific scripts are necessary, split the implementation and detect capability at the entry point.
 
-## 运行前检查
+## Pre-run checks
 
-执行前以程序检查：
+Before execution, check programmatically:
 
-- 必需命令和运行时是否存在；
-- 版本是否满足；
-- 输入是否可读、输出目录是否可写；
-- 配置和密钥是否可解析；
-- 当前宿主是否具备任务需要的工具；
-- 输出是否已存在。
+- Required commands and runtimes exist;
+- Versions satisfy the constraints;
+- Inputs are readable, outputs are writable;
+- Configuration and credentials can be parsed;
+- The current host has the tools the task needs;
+- Outputs may already exist.
 
-检查本身应只读、快速、可重复。正常情况保持简洁；失败时给出缺失项和修复方式。
+The checks themselves should be read-only, fast and repeatable. Be concise in the happy path; on failure, list what is missing and how to fix it.
 
-## 配置与迁移
+## Configuration and migration
 
-- 普通配置放在用户目录，不放 Skill 仓库。
-- 支持环境变量覆盖默认路径。
-- 读取旧配置时保留兼容期，迁移不删除原文件。
-- 更新配置采用合并写入，不覆盖未知字段。
-- 写入使用临时文件加原子替换，防止中断后损坏。
-- 日志和最终回复不显示完整密钥。
+- Regular configuration lives in the user directory, not the Skill repo.
+- Allow env-var overrides of default paths.
+- Keep a compatibility window when reading old configuration; migration does not delete the original file.
+- Configuration updates use merge-write and never overwrite unknown fields.
+- Writes use a temp file plus atomic replace to avoid corruption from interruption.
+- Logs and final replies do not display full secrets.
 
-具体用户目录不能写死在 Skill 中。路径来自命令参数、环境变量、`Path.home()` 等平台目录解析，或者带有明确占位符的配置示例。
+Specific user directories cannot be hardcoded in the Skill. Paths come from command arguments, env vars, `Path.home()` and similar platform-directory resolution, or from configuration examples with explicit placeholders.
 
-## 凭据存储
+## Credential storage
 
-JSON、YAML 和普通配置文件只保存非敏感设置与凭据引用，例如服务名、账号名或 `credential_ref`，不保存密钥值。
+JSON, YAML and regular config files only hold non-sensitive settings and credential references, such as service name, account name or `credential_ref`. They never store secret values.
 
-按以下顺序选择凭据来源：
+Pick the credential source in this order:
 
-1. 复用目标环境已经提供的安全凭据能力；
-2. 桌面环境通过成熟适配器使用 macOS Keychain、Windows Credential Manager 或 Linux Secret Service；
-3. CI、容器或无界面环境使用运行时环境变量；
-4. 没有安全存储时停止并说明限制，不静默降级为明文文件。
+1. Reuse the secure credential capability that the target environment already provides;
+2. On the desktop, use a mature adapter against macOS Keychain, Windows Credential Manager or Linux Secret Service;
+3. In CI, containers or headless environments, use runtime environment variables;
+4. When no secure storage exists, stop and document the limitation; never silently downgrade to a plaintext file.
 
-使用跨平台凭据库时，先确认当前后端确实连接系统加密存储。拒绝明文后端，并在初始化失败时给出替代方法。
+When using a cross-platform credential library, first confirm the current backend is actually connected to the system encrypted store. Refuse plaintext backends and offer an alternative when initialization fails.
 
-Agent 只处理凭据引用和缺失状态。程序在运行时读取密钥并直接调用目标服务，不把密钥写入命令参数、标准输出、日志、缓存、快照、评估目录或 Agent 上下文。
+The Agent only handles credential references and missing-state. Programs read secrets at runtime and call the target service directly; secrets never go into command arguments, stdout, logs, caches, snapshots, evaluation directories, or Agent context.
 
-首次保存、替换、迁移或删除凭据必须获得授权。重复初始化应复用已有凭据引用，不能创建重复记录或覆盖其他账号。
+First-time save, replacement, migration and deletion of credentials require authorization. Repeated initialization should reuse the existing credential reference; it must not create duplicates or overwrite another account.
 
-目标 Skill 实现凭据适配器时，至少提供读取、保存和删除三种动作，并满足：
+When the target Skill implements a credential adapter, it must at minimum provide read, save and delete, and:
 
-- 接口使用凭据引用定位记录，返回结果和错误信息不包含密钥值；
-- 保存和删除前获得授权，读取只发生在真正调用服务的程序内部；
-- 启动检查能区分安全后端、明文后端和后端不可用，不安全时立即停止；
-- 测试使用假密钥验证命令参数、日志、输出、缓存和评估目录没有泄露。
+- The interface locates records through the credential reference and the returned result and error info must not contain the secret value;
+- Save and delete require authorization; read only happens inside the program that actually calls the service;
+- Startup checks distinguish secure backend, plaintext backend and backend unavailable, and stop immediately when insecure;
+- Tests use fake credentials and verify that command arguments, logs, output, caches and evaluation directories never leak.
 
-## 平台特定能力
+## Platform-specific capability
 
-Skill 可以依赖特定平台，但必须明确说明。若核心功能依赖某个平台：
+A Skill may depend on a specific platform, but it must say so. When core functionality depends on a platform:
 
-- 在 description 或 compatibility 中声明；
-- README 安装前即可看到；
-- 初始化程序在写入前检查，不支持时立即停止；
-- 不在不支持的平台上尝试一半后才失败；
-- 如果还有其他可行方法，说明效果和成本差异。
+- Declare it in `description` or `compatibility`;
+- It must be visible in the README before installation;
+- The initializer checks before writing and stops immediately when unsupported;
+- Do not half-attempt the unsupported platform before failing;
+- If other workable approaches exist, describe their effect and cost differences.
 
-## 验证矩阵
+## Verification matrix
 
-发布时记录：
+When releasing, record:
 
-| 维度 | 状态 |
+| Dimension | Status |
 | --- | --- |
-| 当前开发平台 | 已测试 / 未测试 |
-| 其他操作系统 | 已测试 / 静态检查 / 未验证 |
-| 无子 Agent 环境 | 支持 / 降级 / 不支持 |
-| 无浏览器或 GUI | 支持 / 降级 / 不支持 |
-| 离线环境 | 支持 / 部分支持 / 不支持 |
+| Current development platform | Tested / Untested |
+| Other operating systems | Tested / Static-checked / Unverified |
+| No sub-Agent environment | Supported / Degraded / Unsupported |
+| No browser or GUI | Supported / Degraded / Unsupported |
+| Offline environment | Supported / Partial / Unsupported |
 
-静态检查不能替代真实运行。报告时区分“代码未发现平台假设”和“已在该平台执行通过”。
+Static checks are not real runs. When reporting, separate "no platform assumption detected in code" from "actually executed successfully on this platform".

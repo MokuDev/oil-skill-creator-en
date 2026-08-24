@@ -34,7 +34,7 @@ def render_layout(output: Path) -> None:
         )
         return
 
-    raise SystemExit("需要 rsvg-convert，或在 macOS 上使用系统自带的 sips。")
+    raise SystemExit("rsvg-convert is required, or the system-provided sips on macOS.")
 
 
 def main() -> None:
@@ -44,12 +44,12 @@ def main() -> None:
 
         with Image.open(base_path).convert("RGBA") as base, Image.open(SUBJECT).convert("RGBA") as subject:
             if base.size != CANVAS:
-                raise SystemExit(f"布局尺寸错误：{base.size}，预期 {CANVAS}")
+                raise SystemExit(f"layout size mismatch: {base.size}, expected {CANVAS}")
 
             alpha = subject.getchannel("A")
             bounds = alpha.getbbox()
             if bounds is None:
-                raise SystemExit("透明插画没有可见内容。")
+                raise SystemExit("Transparent illustration has no visible content.")
 
             subject = subject.crop(bounds)
             x, y, width, height = SUBJECT_BOX

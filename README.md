@@ -1,127 +1,127 @@
 <p align="center">
-  <img src="./assets/readme/hero.png" width="100%" alt="oil-skill-creator：像做产品一样写 Skill">
+  <img src="./assets/readme/hero.png" width="100%" alt="oil-skill-creator: build Skills like products">
 </p>
 
-`oil-skill-creator` 用来创建、Review、整改和发布 Agent Skill。它关心的不只是说明有没有写完，而是这个 Skill 是否值得安装、能否稳定执行、是否适合能力较弱的模型，以及效果不好时能不能找到真正的设计原因。
+`oil-skill-creator` is used to create, review, remediate and publish Agent Skills. What it cares about is not whether the docs are written, but whether the Skill is worth installing, whether it runs reliably, whether it stays usable by weaker models, and whether real design causes can be found when results disappoint.
 
-> 静态校验通过，只能证明已知结构没有问题，不能证明一个 Skill 真的有用。
+> A passing static check only proves the known structure has no problems — it does not prove the Skill is actually useful.
 
-## 你会得到什么
+## What you get
 
-- 最小且清楚的 Skill 文件结构，不为了完整感创建空目录；
-- 明确的触发与反向边界，减少误触发和漏触发；
-- 静默、可恢复的首次使用流程；
-- 用程序固定确定、重复、失败敏感的步骤；
-- 整改前不可变快照，以及新版与旧版的对照依据；
-- 触发测试、效果聚合、本地评审页和可重复发布包；
-- 对 Token、弱模型可读性、宿主中立和跨平台范围的检查。
+- A minimal, clear Skill file structure with no empty directories created just to feel "complete";
+- Explicit trigger and reverse boundaries, reducing false triggers and missed triggers;
+- Silent, recoverable first-use flow;
+- Deterministic, repeatable, failure-sensitive steps fixed by programs;
+- Immutable pre-remediation snapshots, plus a basis for comparing the new version against the old;
+- Trigger tests, result aggregation, a local review page, and a repeatable publish package;
+- Checks for tokens, weak-model readability, host neutrality and cross-platform scope.
 
-## 三种使用模式
+## Three usage modes
 
-| 模式 | 什么时候使用 | 默认结果 |
+| Mode | When to use | Default result |
 | --- | --- | --- |
-| 创建 | 从零设计一个可重复使用的 Skill | 可执行、可验证的 Skill |
-| Review | 只想知道现有 Skill 哪里有问题 | 按 P0、P1、P2 排列的只读报告 |
-| 整改 | 已经确认需要修复或优化 | 保留基线、局部修改并完成复验 |
+| Create | Designing a reusable Skill from scratch | An executable, verifiable Skill |
+| Review | Just want to know what is wrong with an existing Skill | A read-only report ordered by P0, P1, P2 |
+| Remediate | Already decided to fix or improve | Baseline kept, scoped edits made, re-verified |
 
-Review 默认不修改文件。只有明确要求整改时，才会保存快照并开始写入。
+Review does not modify files by default. Files are only saved and the writer starts once remediation is explicitly requested.
 
-## 安装
+## Installation
 
-### 让 Agent 安装
+### Let the Agent install
 
-复制下面的仓库地址，告诉你正在使用的 Agent：“请帮我安装这个 Skill。”
+Copy the repo URL below and tell the Agent you are using: "Please install this Skill."
 
 ```text
 https://github.com/oil-oil/oil-skill-creator
 ```
 
-### 使用命令安装
+### Install via command
 
 ```shell
 npx skills add oil-oil/oil-skill-creator
 ```
 
-该安装方式需要本机能够运行 `npx`，但 Node.js 不是 Skill 的运行依赖。
+This installation method requires `npx` to be available locally, but Node.js is not a runtime dependency for the Skill.
 
-核心脚本要求 Python 3.10 或更高版本，只使用标准库，无需安装额外依赖，也不需要密钥或初始化配置。
+The core scripts require Python 3.10 or higher, only use the standard library, need no extra dependencies, and need no secrets or initial configuration.
 
-下文中的 `<python>` 表示已确认版本不低于 3.10 的 Python 解释器：macOS 和 Linux 通常使用 `python3`，Windows 通常使用 `py -3`。
+Below, `<python>` stands for a Python interpreter confirmed to be at least 3.10: on macOS and Linux this is usually `python3`, on Windows it is usually `py -3`.
 
-## 开始使用
+## Getting started
 
-直接用自然语言说明目标和写入权限：
+Describe the goal and the write permissions directly in natural language:
 
 ```text
-用 oil-skill-creator 创建一个可公开发布的 Skill。
+Use oil-skill-creator to create a publishable Skill.
 ```
 
 ```text
-只 Review 这个 Skill，按优先级给出证据，不要修改文件。
+Only review this Skill; provide evidence by priority, do not modify files.
 ```
 
 ```text
-整改这个现有 Skill，先保留旧版基线，再修复和复验。
+Remediate this existing Skill; keep the old baseline first, then fix and re-verify.
 ```
 
 ```text
-验证新版是否比普通 Agent 或旧版更有效。
+Verify whether the new version is more effective than a regular Agent or the old version.
 ```
 
-如果已有文件已经说明用户、输入、输出或平台限制，Skill 会直接读取，不会重复提问。只有缺少的决定会改变结果、需要新权限或可能覆盖内容时，才会集中询问。
+If existing files already specify the user, inputs, outputs or platform constraints, the Skill reads them directly and does not ask again. Only decisions that change the result, require new permissions, or could overwrite existing content are asked up front.
 
-## 它重点检查什么
+## What it focuses on checking
 
-### Skill 是否值得做
+### Whether the Skill is worth building
 
-先确认它解决的是重复问题，并且相比普通 Agent 有可见改善。一次性任务、简单提醒或已经足够稳定的工作，不会被强行包装成 Skill。
+First confirm it solves a recurring problem and produces visible improvement over a regular Agent. One-off tasks, simple reminders, or work that is already stable are not forcibly wrapped into a Skill.
 
-### Agent 与程序是否分工合理
+### Whether Agent and program are partitioned sensibly
 
-语义、策略、例外和主观质量交给 Agent 或用户判断；结构、格式、快照、统计、组装和打包等确定流程交给程序。这样既减少遗漏，也避免把主观问题硬编码成规则树。
+Semantics, strategy, exceptions and subjective quality are left to the Agent or the user; deterministic flows such as structure, format, snapshots, statistics, assembly and packaging are left to programs. This reduces omissions and avoids hardcoding subjective judgement into rule trees.
 
-### 大型产物是否容易生成和修改
+### Whether large artifacts are easy to generate and modify
 
-当目标 Skill 容易生成难以维护的巨型单文件时，会检查产物能否按稳定边界拆分、独立验证和局部重做，再由脚本确定性组装。不会按固定行数机械拆分。
+When the target Skill easily produces hard-to-maintain monolithic files, check whether the artifacts can be split along stable boundaries, validated and redone locally, then assembled deterministically by scripts. Splitting is never done by a fixed line count.
 
-### 是否需要可复用操作页面
+### Whether reusable operation pages are needed
 
-复杂配置、反复预览或人工确认不必每次临时生成界面。适合时，Skill 会使用固定页面读取 manifest，由程序负责加载和保存，Agent 只串联操作流程。
+Complex configuration, repeated previews and human confirmation should not require ad-hoc interfaces every time. When appropriate, the Skill uses fixed pages that read a manifest; the program handles load and save, and the Agent only chains the operation flow.
 
-### 能力较弱的模型能否看懂
+### Whether weaker models can understand it
 
-检查入口、模式、术语、分支位置和资源读取时机。主文件只保留主流程，阶段细节按需读取，同一规则不在多个文件重复。
+Check the entry point, modes, terminology, where branches sit and when resources are read. The main file only keeps the main flow; stage details are read on demand and the same rule is not duplicated across multiple files.
 
-## 稳定工具
+## Stable tooling
 
-| 工具 | 用途 |
+| Tool | Purpose |
 | --- | --- |
-| `scaffold_skill.py` | 预览并创建最小 Skill 骨架，拒绝覆盖已有目录 |
-| `validate_skill.py` | 检查结构、链接、重复、个人路径、明文凭据、弱模型风险和宿主中立 |
-| `snapshot_skill.py` | 在整改前保存不可覆盖的旧版基线 |
-| `prepare_evaluation.py` | 创建固定的新版、普通 Agent 或旧版对照目录 |
-| `aggregate_evaluation.py` | 聚合执行结果、耗时和检查数据 |
-| `generate_review.py` | 生成不自动打开浏览器的本地静态评审页 |
-| `score_triggers.py` | 统计正向、反向和保留集上的触发表现 |
-| `package_skill.py` | 生成内容稳定、默认不覆盖的 `.skill` 发布包 |
+| `scaffold_skill.py` | Preview and create a minimal Skill skeleton; refuses to overwrite an existing directory |
+| `validate_skill.py` | Checks structure, links, duplication, personal paths, plaintext secrets, weak-model risk and host neutrality |
+| `snapshot_skill.py` | Saves an immutable pre-remediation baseline of the old version |
+| `prepare_evaluation.py` | Creates fixed comparison directories for the new version, a regular Agent or the old version |
+| `aggregate_evaluation.py` | Aggregates execution results, timings and inspection data |
+| `generate_review.py` | Generates a local static review page that does not auto-open the browser |
+| `score_triggers.py` | Tallies trigger performance on the positive, negative and held-out sets |
+| `package_skill.py` | Generates a content-stable `.skill` publish package, defaulting to not overwriting |
 
-查看任一工具的参数：
+View any tool's arguments:
 
 ```text
 <python> scripts/validate_skill.py --help
 ```
 
-公开发布或整改完成前，运行严格校验：
+Run the strict check before public release or before declaring remediation done:
 
 ```text
 <python> scripts/validate_skill.py <skill-path> --public --strict --weak-model --universal
 ```
 
-只有产品明确依赖某个宿主时，才省略 `--universal`，并如实说明不兼容范围。
+Only omit `--universal` when the product explicitly depends on a specific host, and document the incompatible scope honestly.
 
-## 效果评估
+## Outcome evaluation
 
-创建模式比较“使用 Skill”和“普通 Agent”；整改模式比较当前版本和写入前快照。程序负责准备固定目录、检查数据格式和聚合结果，隔离执行者负责分别运行候选，人类负责审美、文案和整体体验等主观结论。
+Create mode compares "Skill in use" against "regular Agent"; remediate mode compares the current version against the pre-write snapshot. The program prepares fixed directories, checks data formats and aggregates results; an isolated runner runs each candidate; humans own subjective conclusions such as aesthetics, copy and overall experience.
 
 ```text
 <python> scripts/prepare_evaluation.py <skill-path> --mode create --iteration 1
@@ -129,42 +129,42 @@ npx skills add oil-oil/oil-skill-creator
 <python> scripts/generate_review.py <iteration-path>
 ```
 
-没有子 Agent 或等价的隔离执行能力时，仍可完成静态 Review、程序测试和作者试跑，但不能宣称已经完成独立对照。
+Without a sub-Agent or equivalent isolated-execution capability, static review, programmatic tests and author trials can still be completed, but you cannot claim to have finished an independent comparison.
 
-## 兼容性
+## Compatibility
 
-| 范围 | 当前状态 |
+| Scope | Current status |
 | --- | --- |
-| Python | 3.10+，核心脚本只使用标准库 |
-| macOS | 已运行自动化测试 |
-| Windows / Linux | 已按标准库和跨平台路径实现，真实平台运行仍待验证 |
-| 无浏览器或 GUI | 核心流程可用；评审页只生成文件，不自动打开 |
-| 无子 Agent | 创建、静态 Review 和程序测试可用；独立效果对照降级 |
-| 离线环境 | 核心脚本只处理本地文件，不联网 |
+| Python | 3.10+, core scripts only use the standard library |
+| macOS | Automated tests have run |
+| Windows / Linux | Implemented with the standard library and cross-platform paths; real-platform runs still pending verification |
+| No browser or GUI | Core flow works; review page only generates files, it does not auto-open |
+| No sub-Agent | Create, static review and programmatic tests work; independent comparison degrades |
+| Offline environment | Core scripts only handle local files and do not make network calls |
 
-脚本使用 `pathlib` 和 UTF-8，不依赖 bash、PowerShell、Homebrew 或单平台打开命令。兼容性只描述已经实现或验证过的范围。
+The scripts use `pathlib` and UTF-8 and do not depend on bash, PowerShell, Homebrew or single-platform open commands. Compatibility only describes scope that has been implemented or verified.
 
-## 数据与安全边界
+## Data and security boundaries
 
-- 只处理用户明确指定的本地文件；普通配置与密钥分开保存；
-- 本项目自身无需密钥，也不提供通用凭据适配器；它要求目标 Skill 优先使用系统凭据存储，JSON 只保存非敏感配置和凭据引用；
-- 默认拒绝覆盖已有 Skill、快照、评审页、iteration 和发布包；
-- 打包默认排除 Git、虚拟环境、缓存、评估数据和运行 workspace；
-- 不负责执行目标 Skill 的实际业务任务；
-- 不用 AI 自评分数替代视觉、文案等主观评审；
-- Review、反馈、版本差异和单次任务记录不会写入正式 Skill。
+- Only processes local files explicitly specified by the user; regular configuration and secrets are stored separately;
+- The project itself needs no secrets and provides no generic credential adapter; it requires target Skills to prefer system credential storage, with JSON holding only non-sensitive configuration and credential references;
+- Refuses by default to overwrite existing Skills, snapshots, review pages, iterations and publish packages;
+- Packaging excludes by default `.git`, virtual environments, caches, evaluation data and run workspaces;
+- Does not execute the target Skill's actual business tasks;
+- Does not use AI self-scoring as a substitute for subjective reviews such as visuals and copy;
+- Reviews, feedback, version diffs and single-task notes are never written back into the formal Skill.
 
-## 开发与验证
+## Development and verification
 
 ```text
 <python> -m unittest discover -s tests -v
 <python> scripts/validate_skill.py . --public --strict --weak-model --universal
 ```
 
-测试覆盖文件保护、快照、基础结构、资源链接、敏感信息、宿主中立、内容重复、弱模型结构、效果评估、触发测试和可重复打包。
+Tests cover file protection, snapshots, basic structure, resource links, secrets, host neutrality, content duplication, weak-model structure, outcome evaluation, trigger tests and repeatable packaging.
 
-需要继续设计 GitHub 首页时，可以使用 [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme) 调整阅读顺序或制作视觉资源；它不是安装或运行依赖。
+If you continue to design the GitHub home page, you can use [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme) to adjust reading order or produce visual assets; it is not an installation or runtime dependency.
 
-## 许可证
+## License
 
 [MIT](./LICENSE)

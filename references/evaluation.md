@@ -1,82 +1,82 @@
-# Skill 评估规范
+# Skill evaluation specification
 
-## 先确定评估类型
+## Pick the evaluation type first
 
-- **客观型**：输出能由格式、文件、数值、步骤或程序要求验证。
-- **主观型**：核心价值取决于审美、语气、创意或整体体验。
-- **混合型**：既有明确要求，也有人类偏好。
+- **Objective**: output can be verified by format, files, numbers, steps or programmatic requirements.
+- **Subjective**: the core value hinges on aesthetics, tone, creativity or overall experience.
+- **Mixed**: both explicit requirements and human preferences.
 
-评估方法由任务类型决定。明确要求和主观结论要分开报告，不能合并成一个总分。
+The evaluation method follows the task type. Explicit requirements and subjective conclusions must be reported separately and cannot be merged into a single score.
 
-## 测试集
+## Test set
 
-测试保存在目标 Skill 的 `evals/evals.json`，每条使用固定字段：
+Tests live in the target Skill's `evals/evals.json`. Each entry uses fixed fields:
 
 ```json
 {
   "id": 1,
   "name": "descriptive-name",
-  "prompt": "真实用户请求",
-  "expected_output": "期望结果说明",
+  "prompt": "Real user request",
+  "expected_output": "Expected-result description",
   "files": [],
-  "expectations": ["可验证要求"]
+  "expectations": ["Verifiable requirements"]
 }
 ```
 
-先准备 2–3 个真实请求，覆盖主流程、容易出错的分支和相似任务边界。能够明确检查的要求写入 `expectations`，不要改用其他字段。主观偏好写成人工评审问题，不要伪装成程序要求。
+Start with 2-3 real requests that cover the main flow, error-prone branches and similar-task boundaries. Verifiable requirements go into `expectations`; do not repurpose other fields. Subjective preferences become human-review questions, never disguised as programmatic requirements.
 
-## 固定比较基线
+## Fixed comparison baseline
 
-- 创建新 Skill：基线是 `without_skill`，不加载任何 Skill。
-- 整改现有 Skill：第一次编辑前运行 `scripts/snapshot_skill.py`，基线是 `old_skill`，只加载 `skill-snapshot`。
-- 当前版本统一命名为 `with_skill`。
+- Creating a new Skill: baseline is `without_skill`, with no Skill loaded.
+- Remediating an existing Skill: run `scripts/snapshot_skill.py` before the first edit; baseline is `old_skill`, which only loads `skill-snapshot`.
+- The current version is always named `with_skill`.
 
-不允许用正在编辑的目录充当旧版本，也不允许完成修改后再补快照。
+The directory currently being edited cannot stand in for the old version, and snapshots may not be taken after the edits are done.
 
-## 准备评估目录
+## Preparing the evaluation directory
 
-在目标 Skill 目录中运行：
+Run from inside the target Skill directory:
 
-`<python>` 沿用 `SKILL.md` 中已经解析并确认版本的解释器。
+`<python>` follows the interpreter that has already been parsed and version-checked in `SKILL.md`.
 
 ```text
 <python> <oil-skill-creator>/scripts/prepare_evaluation.py . --mode create --iteration 1
 <python> <oil-skill-creator>/scripts/prepare_evaluation.py . --mode improve --iteration 1
 ```
 
-`improve` 模式会检查外部 workspace 中的 `skill-snapshot`。Skill 位于名为 `skills` 的扫描目录时，默认 workspace 是该目录同级的 `skill-workspaces/<skill-name>-workspace/`，避免快照被识别成重复 Skill。每轮使用一个新的 `iteration-N` 目录，程序拒绝覆盖已有目录，并生成下面的结构：
+`improve` mode inspects `skill-snapshot` in the external workspace. When the Skill sits in a scan directory named `skills`, the default workspace is `skill-workspaces/<skill-name>-workspace/` next to it, so the snapshot is not detected as a duplicate Skill. Each round uses a fresh `iteration-N` directory; the program refuses to overwrite and produces the structure below:
 
 ```text
 <workspace>/
-├── skill-snapshot/               # 仅整改模式
+├── skill-snapshot/               # improve mode only
 └── iteration-N/
     ├── run_plan.json
     └── <eval-name>/
         ├── eval_metadata.json
         ├── with_skill/
         │   └── run-1/outputs/
-        └── without_skill/         # 创建模式
+        └── without_skill/         # create mode
             └── run-1/outputs/
 ```
 
-整改模式将 `without_skill` 替换为 `old_skill`。需要测量波动时通过 `--repetitions` 创建多次运行，不要手工复制目录。
+In improve mode `without_skill` is replaced with `old_skill`. To measure variance, use `--repetitions` to create multiple runs; do not copy directories by hand.
 
-## 运行当前版本和基线
+## Running the current version and the baseline
 
-隔离执行者是不会继承作者工作上下文、只获得本次请求和指定 Skill 的 Agent 或运行环境。
+An isolated executor is an Agent or runtime that does not inherit the author's working context and only receives the present request and the specified Skill.
 
-读取 `run_plan.json`，在同一轮运行当前版本和基线。每个执行者获得相同的请求、输入文件、模型和环境，两边只能加载不同的 Skill。
+Read `run_plan.json` and run both the current version and the baseline in the same round. Each executor receives identical requests, input files, model and environment; only the Skill loaded differs.
 
-- 明确提供 Skill 路径，让执行者真正加载 Skill。
-- 不要把 Skill 正文复制进任务提示。
-- 输出只写入计划指定的 `outputs/`。
-- 作者不要提前告诉主观评审者哪个版本较新。
+- Provide the Skill path explicitly so the executor actually loads the Skill;
+- Do not paste the Skill body into the task prompt;
+- Output only into the `outputs/` directory specified in the plan;
+- Do not tell the subjective reviewer in advance which version is newer.
 
-不能并发运行时可以依次执行，但必须保持计划和环境一致，并在结果中说明这一限制。
+If you cannot run them concurrently, run sequentially, but keep the plan and environment consistent, and note this limitation in the results.
 
-## 记录耗时、Token 和客观结果
+## Recording timing, tokens and objective results
 
-每个 `run-N/` 保存 `timing.json`：
+Each `run-N/` saves `timing.json`:
 
 ```json
 {
@@ -86,116 +86,116 @@
 }
 ```
 
-客观型运行还要保存 `grading.json`：
+Objective runs additionally save `grading.json`:
 
 ```json
 {
   "expectations": [
-    {"text": "输出包含必需字段", "passed": true, "evidence": "result.json"}
+    {"text": "Output includes required fields", "passed": true, "evidence": "result.json"}
   ]
 }
 ```
 
-凡是程序能检查的要求，都要运行对应脚本，不能让 Agent 目测。证据必须引用真实文件或命令结果，不能只引用执行者自己的说明。
+Every requirement a program can check must be checked by the corresponding script; do not let the Agent eyeball it. Evidence must reference real files or command output, not the executor's own description.
 
-## 生成对比报告并交给人评审
+## Producing the comparison report and handing it to humans
 
-所有运行完成后执行：
+Once all runs complete:
 
 ```text
 <python> <oil-skill-creator>/scripts/aggregate_evaluation.py <iteration-path>
 <python> <oil-skill-creator>/scripts/generate_review.py <iteration-path>
 ```
 
-聚合程序生成 `benchmark.json` 和 `benchmark.md`。这两份文件记录通过率、耗时、Token 的平均值、波动和基线差异。程序还会生成本地 `review.html` 评审页，但不会自动打开浏览器；页面可以导出 `feedback.json`。
+The aggregator produces `benchmark.json` and `benchmark.md`. Both record averages, variance and baseline deltas for pass rate, duration and tokens. It also generates a local `review.html` review page, but it does not auto-open the browser; the page can export `feedback.json`.
 
-先向用户展示候选结果、证据和对比报告，再停止等待反馈。没有图形界面时，在对话中按同一顺序展示，并把用户意见整理成 `feedback.json`。收到反馈前不要继续修改 Skill。
+Show the candidate results, evidence and comparison report to the user first, then stop and wait for feedback. Without a GUI, walk through the same order in the dialogue and turn user comments into `feedback.json`. Do not keep editing the Skill before feedback arrives.
 
-## 主观与混合型
+## Subjective and mixed types
 
-主观型评估按以下顺序：
+Subjective evaluations follow this order:
 
-1. 独立执行者生成候选；
-2. 程序检查尺寸、格式、数量、路径和可打开性；
-3. 隐去版本身份后并排展示；
-4. 用户判断是否更清楚、更符合偏好、更愿意使用；
-5. 将反馈抽象成通用规则，不复制候选内容。
+1. Independent executors produce the candidates;
+2. Program checks size, format, count, paths and openability;
+3. Versions are displayed side by side with their identities hidden;
+4. The user decides which is clearer, better matches their preference, and is more likely to be used;
+5. Feedback is abstracted into general rules; candidate content is not copied.
 
-另一个模型可以整理差异，不能用自己的分数替代用户。混合型分别报告客观门槛、人类偏好、时间、Token 和未验证风险。
+Another model may organize the differences, but may not substitute its own scoring for the user. Mixed evaluations report objective thresholds, human preferences, duration, tokens and unverified risk separately.
 
-## 触发评估
+## Trigger evaluation
 
-description 优化必须区分静态检查和真实测量。准备 8–10 条应触发请求，以及 8–10 条容易混淆但不应触发的请求。交给用户确认后固定测试集，后续版本不能换题。
+`description` optimization must distinguish static checks from real measurement. Prepare 8-10 should-trigger requests and 8-10 easily confused but should-not-trigger requests. Confirm with the user and freeze the test set; later versions cannot change the questions.
 
-评分程序按 ID 将测试分为两组：60% 是训练集（`train`），用于修改 description；40% 是保留集（`holdout`），只在最终选择版本时使用。
+The scoring program splits cases by ID into two groups: 60% is the training set (`train`), used while editing the description; 40% is the holdout (`holdout`), used only when finally picking a version.
 
-### 准备触发数据
+### Preparing trigger data
 
-评测集：
+Evaluation set:
 
 ```json
 {
   "skill_name": "example-skill",
   "cases": [
-    {"id": "case-1", "query": "真实请求", "should_trigger": true}
+    {"id": "case-1", "query": "Real request", "should_trigger": true}
   ]
 }
 ```
 
-独立执行后保存结果：
+Saved results after isolated execution:
 
 ```json
 {
   "skill_name": "example-skill",
-  "description": "本轮真实加载的 description",
+  "description": "The description actually loaded this round",
   "cases": [
     {"id": "case-1", "trials": [true, true, false]}
   ]
 }
 ```
 
-严格模式要求每条请求至少运行三次，并且运行次数必须是奇数。触发测试和保留集文件交给独立子 Agent 或其他隔离执行者；Skill 作者只能看到训练报告：
+Strict mode requires at least three runs per request and the run count must be odd. The trigger tests and holdout file go to an independent sub-Agent or other isolated executor; the Skill author only sees the training report:
 
 ```text
 <python> <oil-skill-creator>/scripts/score_triggers.py <eval-set> <candidate-results> --skill-path <current-skill> --phase train --strict --output <workspace>/trigger-train.json
 ```
 
-`train` 输出只包含训练集的汇总和用例，不包含保留集的 ID、结果或分组。程序同时检查结果中的 description 是否与对应的 `SKILL.md` 一致，并保存测试集和 description 的摘要。
+The `train` output contains only the training-set summary and cases; it omits holdout IDs, results, and grouping. The program also checks that the description in the results matches the corresponding `SKILL.md` and saves a digest of the test set and description.
 
-### 最终选择版本
+### Picking the final version
 
-隔离执行者保存基线的 `select` 报告，在改写阶段不交给作者。候选版本定稿后，再运行最终选择：
+The isolated executor saves the baseline `select` report and keeps it away from the author during the rewrite phase. Once the candidate version is finalized, run the final selection:
 
 ```text
 <python> <oil-skill-creator>/scripts/score_triggers.py <eval-set> <baseline-results> --skill-path <baseline-skill> --phase select --strict --output <workspace>/trigger-baseline-select.json
 <python> <oil-skill-creator>/scripts/score_triggers.py <eval-set> <candidate-results> --skill-path <current-skill> --phase select --strict --baseline-report <workspace>/trigger-baseline-select.json --output <workspace>/trigger-candidate-select.json
 ```
 
-报告只有同时满足以下条件，才标记 `recommended: true`：
+The report only marks `recommended: true` when all of the following hold:
 
-- 保留集准确率上升；
-- 应触发请求的命中率没有下降；
-- 不应触发请求的排除率没有下降。
+- Holdout accuracy increased;
+- Hit rate on should-trigger requests did not drop;
+- Exclusion rate on should-not-trigger requests did not drop.
 
-出现取舍时交给用户决定。不能用训练集的改善掩盖保留集的退步，也不能只凭关键词或作者直觉声称触发更准确。
+Trade-offs are escalated to the user. Improvements on the training set may not mask regressions on the holdout, and accuracy cannot be claimed from keywords alone or the author's intuition.
 
-程序能够避免在训练报告中意外显示保留集，但无法阻止拥有全部文件权限的作者主动读取。
+The program can keep holdout data out of the training report accidentally, but it cannot stop an author with full file permissions from reading on purpose.
 
-没有隔离执行者时，必须标记“保留集未独立”，不能宣称新 description 在未见请求上也有改善。
+Without an isolated executor, mark "holdout not independently run" and do not claim the new description also improves on unseen requests.
 
-## 迭代与停止
+## Iterate and stop
 
-每轮写入新的 `iteration-N`，并使用同一个固定基线。只有测试请求本身改变时，才更新该轮的评估信息；不要覆盖上一轮结果。
+Each round writes a new `iteration-N` and uses the same frozen baseline. Only update a round's evaluation info when the test request itself changes; do not overwrite previous rounds.
 
-结果不理想时不要立即向 Skill 追加禁令或特例。先比较基线与带 Skill 运行，再结合输入完整性、执行偏差、工具限制、环境波动和用户反馈，确认 Skill 是否造成或放大了问题。
+When results disappoint, do not immediately bolt prohibitions or one-offs onto the Skill. First compare the baseline and the Skill-equipped runs; combine input completeness, executor drift, tool limits, environmental variance and user feedback to confirm whether the Skill caused or amplified the problem.
 
-若问题来自 Skill，优先修正阶段目标、判断依据、工具接口或验证节点。只有条件客观且处理稳定时才增加程序分支；修改后用原失败类型和正常主流程共同回归。
+If the issue is in the Skill, fix the stage goal, judgement criteria, tool interfaces or verification checkpoints first. Add programmatic branches only when conditions are objective and handling is stable; afterwards, regress with the original failure type together with normal main-flow cases.
 
-满足以下任一条件时停止：
+Stop when any of the following holds:
 
-- 用户确认真实结果满足使用；
-- 客观指标达到事先约定门槛且没有明显回归；
-- 新修改不再产生能够看到或测量的改善；
-- 继续优化的时间或 Token 成本高于收益。
+- The user confirms the real result meets their needs;
+- The objective metric reaches the pre-agreed threshold with no clear regressions;
+- New edits stop producing observable or measurable improvement;
+- Further optimization costs more in time or tokens than it returns.
 
-没有子 Agent 或其他隔离执行能力时，只能由作者试跑并交给人查看。明确写“尚未完成独立验证”，不能把静态校验或作者自测当作完整效果证据。
+Without a sub-Agent or other isolated execution, only the author can dry-run and hand outputs to humans. State "independent verification has not been completed" explicitly; do not treat static validation or author self-test as complete outcome evidence.

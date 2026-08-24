@@ -1,1 +1,1 @@
-"""oil-skill-creator 确定性辅助程序的测试。"""
+"""Tests for oil-skill-creator's deterministic helper programs."""

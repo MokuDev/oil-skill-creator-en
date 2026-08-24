@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验并创建能够重复生成的 .skill 归档。"""
+"""Validate and produce a reproducible .skill archive."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from pathlib import Path
 
 try:
     from .validate_skill import audit_skill, parse_frontmatter
-except ImportError:  # 直接运行脚本时使用同目录导入。
+except ImportError:  # Use same-package import when the script is run directly.
     from validate_skill import audit_skill, parse_frontmatter
 
 
@@ -58,7 +58,7 @@ def package_skill(
     )
     if not report.passed(strict):
         raise ValueError(
-            f"校验失败：{len(report.errors)} 个错误，{len(report.warnings)} 个警告"
+            f"validation failed: {len(report.errors)} error(s), {len(report.warnings)} warning(s)"
         )
 
     name = _skill_name(path)
@@ -70,14 +70,14 @@ def package_skill(
     destination.mkdir(parents=True, exist_ok=True)
     archive = destination / f"{name}.skill"
     if archive.exists() and not replace:
-        raise FileExistsError(f"目标包已存在，拒绝覆盖：{archive}")
+        raise FileExistsError(f"target archive already exists, refusing to overwrite: {archive}")
     if archive.exists():
         archive.unlink()
 
     files: list[Path] = []
     for item in sorted(path.rglob("*"), key=lambda value: value.as_posix()):
         if item.is_symlink():
-            raise ValueError(f"发布包不接受符号链接：{item}")
+            raise ValueError(f"publish package does not accept symbolic links: {item}")
         if not item.is_file():
             continue
         relative = item.relative_to(path)
@@ -104,24 +104,24 @@ def package_skill(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="校验并打包；相同文件会生成相同的 .skill 包")
-    parser.add_argument("skill_path", help="Skill 目录")
-    parser.add_argument("--output-dir", help="输出目录，默认是 Skill 同级 dist/")
-    parser.add_argument("--public", action="store_true", help="执行公开 README 检查")
-    parser.add_argument("--strict", action="store_true", help="warning 也阻止打包")
+    parser = argparse.ArgumentParser(description="validate and package; identical files produce identical .skill packages")
+    parser.add_argument("skill_path", help="Skill directory")
+    parser.add_argument("--output-dir", help="output directory, default is sibling dist/")
+    parser.add_argument("--public", action="store_true", help="run the public-release README checks")
+    parser.add_argument("--strict", action="store_true", help="warnings also block packaging")
     parser.add_argument(
         "--weak-model",
         action="store_true",
-        help="使用面向较弱模型的严格结构门槛",
+        help="use the strict structural thresholds aimed at weaker models",
     )
     parser.add_argument(
         "--universal",
         action="store_true",
-        help="打包前拒绝在通用流程中写死具体宿主品牌",
+        help="refuse to hardcode a specific host's brand in generic flows before packaging",
     )
-    parser.add_argument("--include-evals", action="store_true", help="将 evals/ 放入包中")
-    parser.add_argument("--replace", action="store_true", help="明确覆盖已有同名包")
-    parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
+    parser.add_argument("--include-evals", action="store_true", help="include evals/ in the package")
+    parser.add_argument("--replace", action="store_true", help="explicitly overwrite an existing archive of the same name")
+    parser.add_argument("--json", action="store_true", dest="as_json", help="emit JSON output")
     return parser
 
 
@@ -150,9 +150,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        print(f"已创建：{archive}")
-        print(f"SHA-256：{digest}")
-        print(f"文件数：{len(added)}")
+        print(f"created: {archive}")
+        print(f"SHA-256: {digest}")
+        print(f"file count: {len(added)}")
     return 0
 
 

@@ -26,10 +26,10 @@ def write_eval_set(skill: Path) -> Path:
                     {
                         "id": 1,
                         "name": "main-flow",
-                        "prompt": "执行主流程",
-                        "expected_output": "生成结果文件",
+                        "prompt": "Run the main flow",
+                        "expected_output": "Produce the result file",
                         "files": [],
-                        "expectations": ["结果可用"],
+                        "expectations": ["result is usable"],
                     }
                 ],
             },
@@ -51,7 +51,7 @@ def fill_runs(iteration: Path) -> None:
             json.dumps(
                 {
                     "expectations": [
-                        {"text": "结果可用", "passed": passed, "evidence": "result.txt"}
+                        {"text": "result is usable", "passed": passed, "evidence": "result.txt"}
                     ]
                 },
                 ensure_ascii=False,
@@ -71,7 +71,7 @@ def fill_runs(iteration: Path) -> None:
             encoding="utf-8",
         )
         (run_dir / "outputs" / "result.txt").write_text(
-            "可用结果\n" if passed else "基线结果\n", encoding="utf-8"
+            "usable result\n" if passed else "baseline result\n", encoding="utf-8"
         )
         (run_dir / "outputs" / "preview.png").write_bytes(
             b"\x89PNG\r\n\x1a\n"
@@ -161,7 +161,7 @@ class EvaluationToolsTests(unittest.TestCase):
             )
             review, manifest = generate_review(iteration)
             html = review.read_text(encoding="utf-8")
-            self.assertIn("候选 A", html)
+            self.assertIn("Candidate A", html)
             self.assertNotIn("with_skill", html)
             self.assertIn("+'\\n'", html)
             self.assertIn("localStorage", html)
@@ -184,10 +184,10 @@ class EvaluationToolsTests(unittest.TestCase):
                 json.dumps(
                     {
                         "skill_name": "sample-skill",
-                        "description": "处理固定流程",
+                        "description": frontmatter["description"],
                         "cases": [
-                            {"id": "yes", "query": "执行固定流程", "should_trigger": True},
-                            {"id": "no", "query": "普通问答", "should_trigger": False},
+                            {"id": "yes", "query": "Run the fixed workflow", "should_trigger": True},
+                            {"id": "no", "query": "Ordinary question", "should_trigger": False},
                         ],
                     }
                 ),
@@ -212,7 +212,7 @@ class EvaluationToolsTests(unittest.TestCase):
                 score_triggers(eval_set, results, skill, strict=True, phase="select")
 
             bad_results = json.loads(results.read_text(encoding="utf-8"))
-            bad_results["description"] = "不是目标 description"
+            bad_results["description"] = "not the target description"
             results.write_text(json.dumps(bad_results), encoding="utf-8")
             with self.assertRaises(ValueError):
                 score_triggers(eval_set, results, skill, phase="select")
@@ -227,14 +227,14 @@ class EvaluationToolsTests(unittest.TestCase):
             cases = [
                 {
                     "id": f"positive-{index}",
-                    "query": f"应触发请求 {index}",
+                    "query": f"should-trigger request {index}",
                     "should_trigger": True,
                 }
                 for index in range(8)
             ] + [
                 {
                     "id": f"negative-{index}",
-                    "query": f"不应触发请求 {index}",
+                    "query": f"should-not-trigger request {index}",
                     "should_trigger": False,
                 }
                 for index in range(8)
@@ -265,7 +265,10 @@ class EvaluationToolsTests(unittest.TestCase):
             baseline_report = root / "baseline-report.json"
             baseline_report.write_text(json.dumps(baseline), encoding="utf-8")
 
-            candidate_description = "处理稳定流程。当用户要求固定产物时使用；普通问答不要触发。"
+            candidate_description = (
+                "Run stable flows; use when the user asks for a fixed artifact; "
+                "do not trigger on ordinary questions."
+            )
             skill_md = skill / "SKILL.md"
             skill_md.write_text(
                 skill_md.read_text(encoding="utf-8").replace(

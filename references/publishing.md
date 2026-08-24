@@ -1,90 +1,90 @@
-# GitHub 与发布
+# GitHub and publishing
 
-## README 的职责
+## What the README is for
 
-公开 Skill 的 README 至少回答：
+A published Skill's README answers at least:
 
-1. 它解决什么问题，为什么值得安装；
-2. 最终会得到什么；
-3. 如何安装；
-4. 是否需要初始化、配置或密钥；
-5. 如何用自然语言触发；
-6. 依赖、支持平台和宿主能力；
-7. 数据会发送到哪里；
-8. 适用边界和相邻 Skill；
-9. 如何运行测试和排查问题。
+1. What problem it solves, and why it is worth installing;
+2. What the user will get at the end;
+3. How to install it;
+4. Whether initialization, configuration or secrets are required;
+5. How to trigger it in natural language;
+6. Dependencies, supported platforms and host capabilities;
+7. Where the data goes;
+8. Applicable scope and adjacent Skills;
+9. How to run tests and troubleshoot.
 
-没有配置时也应明确写“无需额外配置”，不要直接省略。README 面向人，SKILL.md 面向 Agent；可以互相链接，但不要复制整段执行规范。
+When no configuration is needed, still write "no extra configuration required" explicitly; do not silently skip the section. The README is for humans, `SKILL.md` is for the Agent. They can link to each other, but do not copy blocks of execution rules.
 
-## 安装说明
+## Installation instructions
 
-公开 GitHub 仓库的 README 默认提供两个安装入口，并把最容易使用的方式放在前面：
+The README of a public GitHub repo defaults to providing two install paths, with the easiest one first:
 
-1. **让 Agent 安装**：给出完整仓库地址，并提供一句可以直接复制的自然语言，例如“请帮我安装这个 Skill：`https://github.com/<owner>/<repository>`”。
-2. **使用命令安装**：给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>`。
+1. **Let the Agent install**: provide the full repo URL and a one-line natural-language prompt users can paste, e.g. "Please install this Skill: `https://github.com/<owner>/<repository>`".
+2. **Install via command**: provide `npx skills add <owner>/<repository>` with `<owner>/<repository>` already replaced by real values.
 
-命令必须与仓库实际结构一致，并在发布前验证。`npx` 只属于可选安装方式；如果它需要 Node.js，不要把 Node.js 误写成 Skill 本身的运行依赖。实测不支持命令安装时，不要放置失效命令，应说明原因并提供手动安装方式。
+The command must match the actual repo structure and be verified before release. `npx` is only an optional installation method; if it requires Node.js, do not falsely list Node.js as the Skill's own runtime dependency. When command installation is empirically unsupported, do not leave a broken command in place — explain why and provide a manual install path.
 
-## 可选的 README 设计增强
+## Optional README design enhancement
 
-确认内容、安装命令、兼容性和数据边界以后，如果用户还希望改善 GitHub 首页，可以使用 [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme)。它可以调整整份 README，也可以只制作首页主视觉、章节标题或流程图。
+After value, install command, compatibility and data boundaries are confirmed, if the user still wants to improve the GitHub landing page, you can use [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme). It can adjust the whole README, or just produce the hero visual, section headers, or flow diagrams.
 
-先确认是“整份 README”还是“只做视觉资源”，不要把推荐工具理解成自动改写授权。视觉升级不能替代事实校验，也不应让 README 变长；用户不需要美化时，保留清楚的纯 Markdown 即可。
+First confirm whether it is "the whole README" or "only visual assets". Do not treat a recommended tool as authorization to rewrite automatically. Visual upgrade is not a substitute for fact-checking, and must not lengthen the README; when the user does not need beautification, keep the clear plain Markdown.
 
-## 仓库内容
+## Repo contents
 
-公开仓库通常包含：
+A public repo usually contains:
 
 ```text
 <skill-name>/
 ├── README.md
 ├── SKILL.md
-├── scripts/       # 按需
-├── references/    # 按需
-├── assets/        # 按需
-└── tests/         # 有脚本时优先提供
+├── scripts/       # on demand
+├── references/    # on demand
+├── assets/        # on demand
+└── tests/         # prefer whenever there are scripts
 ```
 
-许可证（License）需要由发布者选择，不要自动猜测。个人配置、密钥、缓存、虚拟环境、生成结果和评估 workspace 不进入仓库。
+The license must be chosen by the publisher; do not guess. Personal configuration, secrets, caches, virtual environments, generated results and evaluation workspaces do not enter the repo.
 
-## 发布前门槛
+## Pre-release bar
 
-- description 同时覆盖正向和反向触发；
-- SKILL.md 没有历史案例、个人路径和修改记录；
-- 所有本地资源链接存在；
-- 确定、重复并且必做的流程已写成脚本，并有回归测试；
-- README 讲清价值、安装、配置、使用和兼容性；GitHub 仓库提供 Agent 安装和命令安装入口；
-- README 与 SKILL.md 没有复制同一套执行说明；
-- references 都能从 SKILL.md 的资源导航按需到达，没有孤立文档；
-- 面向较弱模型时，已通过严格结构检查和目标模型试跑；
-- 对外部服务、权限、费用和数据边界没有隐瞒；
-- 当前目录已完成个人路径、明文密钥和高风险凭据文件的规则型筛查，并且没有把“通过”表述成“确认不存在秘密”；
-- 已有 Git 历史已使用历史型密钥扫描器检查，或者明确标记尚未验证；
-- 通用 Skill 没有把宿主品牌、专属目录、专属命令或私有 API 写死在流程中；
-- 客观型 Skill 有基线比较；
-- 主观型 Skill 已交给人评审；
-- 整改现有 Skill 时保留了写入前快照和对照证据；
-- P0、P1 Review 发现已处理或由用户明确接受；
-- 未验证的平台和能力明确标记。
+- `description` covers both positive and reverse triggering;
+- `SKILL.md` contains no historical cases, personal paths or change logs;
+- All local resource links resolve;
+- Deterministic, repeatable, mandatory steps are scripted, with regression tests;
+- The README explains value, installation, configuration, usage and compatibility; the GitHub repo provides both the Agent-install and the command-install entry points;
+- The README and `SKILL.md` do not duplicate the same execution instructions;
+- Every `references/` document is reachable on demand from `SKILL.md`'s resource navigation; no orphan docs;
+- For weaker models, it has passed the strict structural check and a dry run on the target model;
+- External services, permissions, costs and data boundaries are not hidden;
+- The current directory has run the rule-style scan for personal paths, plaintext secrets and high-risk credential files, and "passing" is not represented as "confirmed no secrets exist";
+- Existing Git history has been checked with a historical-secret scanner, or the unverified status is explicitly marked;
+- Generic Skills do not hardcode host brand, dedicated directories, dedicated commands or private APIs into the flow;
+- Objective Skills have a baseline comparison;
+- Subjective Skills have been handed to humans for review;
+- Remediating an existing Skill kept the pre-write snapshot and comparison evidence;
+- P0/P1 Review findings are handled or explicitly accepted by the user;
+- Unverified platforms and capabilities are clearly marked.
 
-## 打包边界
+## Packaging boundaries
 
-`.skill` 发布包默认排除：
+The `.skill` publish package excludes by default:
 
-- `.git/`；
-- `.venv/`、`node_modules/` 和缓存；
-- `evals/`；
-- 测试运行结果和 Skill 同级的 workspace；
-- `.DS_Store`、字节码和临时文件。
+- `.git/`;
+- `.venv/`, `node_modules/` and caches;
+- `evals/`;
+- Test run results and Skill-sibling workspaces;
+- `.DS_Store`, bytecode and temp files.
 
-打包前先校验。包内使用稳定路径顺序和固定时间戳，保证相同内容能够产生相同归档。已有目标包默认不覆盖。
+Validate before packaging. The package uses stable path ordering and fixed timestamps, so identical content produces identical archives. Existing target packages default to not overwriting.
 
-当前文件检查只覆盖校验器能够读取的文本和高风险文件名，不分析二进制内容、压缩包或编码混淆，也不能证明 Git 历史安全。公开前根据仓库内容补充成熟的密钥扫描器；已有仓库还要检查全部提交。发现泄露时先撤销或轮换凭据，再清理历史；只删除当前文件中的密钥并不能消除泄露。
+The current file checks only cover the text and high-risk filenames the validator can read; they do not analyze binary content, archives, or encoding obfuscation, and they cannot prove Git history is safe. Before going public, supplement the scan with a mature secret scanner based on the repo content; existing repos also need full-commit history checks. When a leak is found, revoke or rotate credentials first, then scrub the history. Just deleting the secret from the current file does not eliminate the leak.
 
-## 维护原则
+## Maintenance principles
 
-- SKILL.md、references 和 README 只描述当前有效状态。
-- 版本历史放 Git 提交、Release notes 或外部 workspace。
-- 每次修复先归因；确定、重复的问题才补校验或脚本，语义问题改流程和判断原则，偶发个案不写入 Skill。
-- 不为了保留历史兼容而无限增加正文分支；可程序迁移的交给程序。
-- 删除不再产生价值的规则，防止 Token 和维护成本持续增长。
+- `SKILL.md`, `references/` and the README only describe the currently valid state.
+- Version history lives in Git commits, release notes, or an external workspace.
+- Before each fix, attribute the cause. Only for deterministic, recurring problems add a check or script; semantic problems change the flow and judgement principles; one-off cases do not enter the Skill.
+- Do not add infinite inline branches just to preserve historical compatibility; what can be migrated programmatically goes to programs.
+- Remove rules that no longer produce value, to keep tokens and maintenance cost from growing forever.

@@ -9,38 +9,44 @@ from scripts.validate_skill import audit_skill, parse_frontmatter
 
 VALID_SKILL = """---
 name: sample-skill
-description: 生成稳定产物。当用户要求执行固定流程时使用；普通问答不要触发。
-compatibility: Python 3，支持 macOS、Windows 和 Linux。
+description: Produce stable artifacts. Use when the user asks for a fixed workflow; do not trigger on ordinary questions.
+compatibility: Python 3, supporting macOS, Windows and Linux.
 ---
 
 # sample-skill
 
-读取 [规则](references/rules.md)，运行 `scripts/run.py`，交付结果。
+Read the [rules](references/rules.md), run `scripts/run.py`, deliver the result.
 """
 
 VALID_README = """# sample-skill
 
-## 有什么用
-说明价值。
+## What it is for
 
-## 安装
-把仓库地址交给 Agent 安装：
+Describe the value.
+
+## Installation
+
+Hand the repo URL to the Agent to install:
 
 https://github.com/example/sample-skill
 
-也可以使用 `npx skills add example/sample-skill`。
+You can also use `npx skills add example/sample-skill`.
 
-## 配置
-无需额外配置。
+## Configuration
 
-## 使用
-说明使用。
+No extra configuration required.
 
-## 兼容性与依赖
-支持 macOS、Windows 和 Linux。
+## Usage
 
-## 数据与适用边界
-只处理本地数据。
+Describe the usage.
+
+## Compatibility and dependencies
+
+Supports macOS, Windows and Linux.
+
+## Data and applicable scope
+
+Only handles local data.
 """
 
 
@@ -50,7 +56,7 @@ def make_valid_skill(root: Path) -> Path:
     (skill / "scripts").mkdir()
     (skill / "SKILL.md").write_text(VALID_SKILL, encoding="utf-8")
     (skill / "README.md").write_text(VALID_README, encoding="utf-8")
-    (skill / "references" / "rules.md").write_text("# 规则\n", encoding="utf-8")
+    (skill / "references" / "rules.md").write_text("# Rules\n", encoding="utf-8")
     (skill / "scripts" / "run.py").write_text("print('ok')\n", encoding="utf-8")
     return skill
 
@@ -66,14 +72,14 @@ class ValidateSkillTests(unittest.TestCase):
         raw = """---
 name: folded-skill
 description: >
-  第一行。
-  当用户需要时使用；普通任务不要触发。
+  First line.
+  Use when the user needs it; do not trigger on ordinary tasks.
 ---
 body
 """
         frontmatter, body = parse_frontmatter(raw)
         self.assertEqual(frontmatter["name"], "folded-skill")
-        self.assertIn("当用户需要时使用", frontmatter["description"])
+        self.assertIn("Use when the user needs it", frontmatter["description"])
         self.assertEqual(body, "body\n")
 
     def test_broken_resource_is_an_error(self) -> None:
@@ -90,7 +96,7 @@ body
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
-                handle.write("\n## 修改记录\n\n- 调整流程。\n")
+                handle.write("\n## Change log\n\n- Adjusted the flow.\n")
             report = audit_skill(skill)
             self.assertIn("content.history", {item.code for item in report.errors})
 
@@ -98,7 +104,7 @@ body
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
-                handle.write("\n不要复用上一次任务里的具体内容。\n")
+                handle.write("\nDo not reuse the specific content from the previous task.\n")
             report = audit_skill(skill)
             self.assertNotIn("content.history", {item.code for item in report.errors})
 
@@ -106,7 +112,7 @@ body
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             (skill / "references" / "rules.md").write_text(
-                "# 修改记录\n\n- 调整流程。\n", encoding="utf-8"
+                "# Change log\n\n- Adjusted the flow.\n", encoding="utf-8"
             )
             report = audit_skill(skill)
             self.assertIn("content.history", {item.code for item in report.errors})
@@ -116,7 +122,7 @@ body
             skill = make_valid_skill(Path(temporary))
             personal_path = "/Users/" + "example/private/config.json"
             with (skill / "README.md").open("a", encoding="utf-8") as handle:
-                handle.write(f"\n配置位于 {personal_path}。\n")
+                handle.write(f"\nThe config lives at {personal_path}.\n")
             report = audit_skill(skill)
             self.assertIn("content.personal-path", {item.code for item in report.errors})
 
@@ -156,7 +162,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             skill = make_valid_skill(Path(temporary))
             readme = (skill / "README.md").read_text(encoding="utf-8")
             (skill / "README.md").write_text(
-                readme.replace("把仓库地址交给 Agent 安装：\n\n", ""),
+                readme.replace("Hand the repo URL to the Agent to install:\n\n", ""),
                 encoding="utf-8",
             )
             report = audit_skill(skill, public=True)
@@ -171,7 +177,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             readme = (skill / "README.md").read_text(encoding="utf-8")
             (skill / "README.md").write_text(
                 readme.replace(
-                    "\n也可以使用 `npx skills add example/sample-skill`。\n", "\n"
+                    "\nYou can also use `npx skills add example/sample-skill`.\n", "\n"
                 ),
                 encoding="utf-8",
             )
@@ -351,7 +357,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             (skill / "references" / "orphan.md").write_text(
-                "# 孤立规则\n\n这份规则没有入口。\n", encoding="utf-8"
+                "# Orphan rule\n\nThis rule has no entry point.\n", encoding="utf-8"
             )
             report = audit_skill(skill)
             self.assertIn(
@@ -360,15 +366,16 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
 
     def test_duplicate_markdown_block_is_a_warning(self) -> None:
         duplicate = (
-            "所有确定、重复并且能够通过程序验证的步骤都应写进脚本，"
-            "执行 Agent 只负责选择策略和处理无法穷举的例外情况。"
+            "Every deterministic, repeatable step that can be checked by a program "
+            "should be written into a script; the executing Agent should only choose "
+            "strategy and handle non-exhaustive exceptions."
         )
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
                 handle.write(f"\n{duplicate}\n")
             (skill / "references" / "rules.md").write_text(
-                f"# 规则\n\n{duplicate}\n", encoding="utf-8"
+                f"# Rules\n\n{duplicate}\n", encoding="utf-8"
             )
             report = audit_skill(skill)
             self.assertIn(
@@ -377,16 +384,17 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
 
     def test_near_duplicate_markdown_block_is_a_warning(self) -> None:
         original = (
-            "面向能力较弱的模型时，每条指令都要明确动作主体、输入、输出和停止条件，"
-            "分支必须紧邻对应步骤，并保持术语前后一致。"
+            "When targeting weaker models, every instruction must spell out its actor, "
+            "input, output and stopping condition; branches must sit next to the step "
+            "they belong to, and terminology must stay consistent throughout."
         ) * 5
-        similar = original.replace("都要明确", "需要明确", 1)
+        similar = original.replace("must spell out", "needs to spell out", 1)
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
                 handle.write(f"\n{original}\n")
             (skill / "references" / "rules.md").write_text(
-                f"# 规则\n\n{similar}\n", encoding="utf-8"
+                f"# Rules\n\n{similar}\n", encoding="utf-8"
             )
             report = audit_skill(skill)
             self.assertIn(
@@ -394,7 +402,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             )
 
     def test_weak_model_profile_rejects_long_paragraph(self) -> None:
-        long_paragraph = "这个步骤必须保持单一动作并明确输入输出。" * 30
+        long_paragraph = "This step must keep a single action and state its input and output clearly." * 30
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
@@ -411,7 +419,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
             (skill / "evals" / "evals.json").write_text(
                 """{
   "skill_name": "sample-skill",
-  "evals": [{"id": 1, "prompt": "测试", "assertions": []}]
+  "evals": [{"id": 1, "prompt": "test", "assertions": []}]
 }
 """,
                 encoding="utf-8",
@@ -423,7 +431,7 @@ CONFIG = Path(os.environ.get("SAMPLE_SKILL_CONFIG", Path.home() / ".sample-skill
         with tempfile.TemporaryDirectory() as temporary:
             skill = make_valid_skill(Path(temporary))
             with (skill / "SKILL.md").open("a", encoding="utf-8") as handle:
-                handle.write("\n只在 Codex 中执行这个流程。\n")
+                handle.write("\nRun this flow only in Codex.\n")
             report = audit_skill(skill, universal=True)
             self.assertIn(
                 "compatibility.host-coupling", {item.code for item in report.errors}

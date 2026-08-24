@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""在整改前创建不可变 Skill 基线，并拒绝覆盖。"""
+"""Create an immutable Skill baseline before remediation; refuses to overwrite."""
 
 from __future__ import annotations
 
@@ -23,11 +23,11 @@ EXCLUDED_FILES = {".DS_Store"}
 def _skill_name(skill_path: Path) -> str:
     skill_md = skill_path / "SKILL.md"
     if not skill_md.is_file():
-        raise ValueError("目标目录缺少 SKILL.md")
+        raise ValueError("target directory is missing SKILL.md")
     frontmatter, _ = parse_frontmatter(skill_md.read_text(encoding="utf-8"))
     name = frontmatter.get("name", "").strip()
     if not name:
-        raise ValueError("SKILL.md 缺少 name")
+        raise ValueError("SKILL.md is missing name")
     return name
 
 
@@ -38,14 +38,14 @@ def _included_files(skill_path: Path) -> list[Path]:
         if any(part in EXCLUDED_DIRS for part in relative.parts):
             continue
         if path.is_symlink():
-            raise ValueError(f"快照不接受符号链接：{path}")
+            raise ValueError(f"snapshot does not accept symbolic links: {path}")
         if path.is_file() and path.name not in EXCLUDED_FILES:
             files.append(path)
     return files
 
 
 def default_workspace(skill_path: Path, name: str) -> Path:
-    """返回不会落入常见 Skill 扫描目录的默认 workspace。"""
+    """Return a default workspace that does not fall inside a common Skill scan directory."""
     parent = skill_path.parent
     if parent.name.lower() == "skills":
         return parent.parent / "skill-workspaces" / f"{name}-workspace"
@@ -69,20 +69,20 @@ def verify_snapshot(workspace: str | Path) -> dict[str, object]:
     destination = workspace_path / "skill-snapshot"
     metadata_path = workspace_path / "snapshot.json"
     if not destination.is_dir() or not metadata_path.is_file():
-        raise ValueError(f"快照或元数据不存在：{destination}")
+        raise ValueError(f"snapshot or metadata does not exist: {destination}")
     try:
         metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        raise ValueError(f"快照元数据无效：{metadata_path}") from exc
+        raise ValueError(f"snapshot metadata is invalid: {metadata_path}") from exc
     if not isinstance(metadata, dict):
-        raise ValueError(f"快照元数据必须是对象：{metadata_path}")
+        raise ValueError(f"snapshot metadata must be an object: {metadata_path}")
     recorded_path = Path(str(metadata.get("snapshot", ""))).expanduser().resolve()
     if recorded_path != destination:
-        raise ValueError("snapshot.json 指向的快照路径与当前 workspace 不一致")
+        raise ValueError("snapshot.json points to a snapshot path that does not match the current workspace")
     files = _included_files(destination)
     digest = _digest(destination, files)
     if metadata.get("files") != len(files) or metadata.get("sha256") != digest:
-        raise ValueError("skill-snapshot 内容已变化，拒绝作为整改基线")
+        raise ValueError("skill-snapshot content has changed, refusing to use it as a remediation baseline")
     return {
         "snapshot": str(destination),
         "files": len(files),
@@ -97,7 +97,7 @@ def snapshot_skill(
 ) -> dict[str, object]:
     source = Path(skill_path).expanduser().resolve()
     if not source.is_dir():
-        raise ValueError(f"Skill 目录不存在：{source}")
+        raise ValueError(f"Skill directory does not exist: {source}")
     name = _skill_name(source)
     workspace_path = (
         Path(workspace).expanduser().resolve()
@@ -107,7 +107,7 @@ def snapshot_skill(
     destination = workspace_path / "skill-snapshot"
     metadata = workspace_path / "snapshot.json"
     if destination.exists() or metadata.exists():
-        raise FileExistsError(f"快照已存在，拒绝覆盖：{destination}")
+        raise FileExistsError(f"snapshot already exists, refusing to overwrite: {destination}")
 
     files = _included_files(source)
     payload: dict[str, object] = {
@@ -135,14 +135,14 @@ def snapshot_skill(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="整改前创建不再修改的旧版 Skill 快照")
-    parser.add_argument("skill_path", help="已有 Skill 目录")
+    parser = argparse.ArgumentParser(description="Create an immutable old-version Skill snapshot before remediation")
+    parser.add_argument("skill_path", help="existing Skill directory")
     parser.add_argument(
         "--workspace",
-        help="工作目录；Skill 位于 skills 扫描目录时，默认使用其同级的 skill-workspaces",
+        help="working directory; when the Skill sits in a scan directory called 'skills', the default is its sibling skill-workspaces",
     )
-    parser.add_argument("--dry-run", action="store_true", help="只显示计划，不写入")
-    parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
+    parser.add_argument("--dry-run", action="store_true", help="only show the plan, do not write")
+    parser.add_argument("--json", action="store_true", dest="as_json", help="emit JSON output")
     return parser
 
 
@@ -156,10 +156,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        status = "仅预览" if payload["status"] == "dry-run" else "已创建"
-        print(f"{status}：{payload['snapshot']}")
-        print(f"文件数：{payload['files']}")
-        print(f"SHA-256：{payload['sha256']}")
+        status = "preview only" if payload["status"] == "dry-run" else "created"
+        print(f"{status}: {payload['snapshot']}")
+        print(f"file count: {payload['files']}")
+        print(f"SHA-256: {payload['sha256']}")
     return 0
 
 

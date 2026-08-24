@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""根据 evals.json 创建结构固定、可以重复运行的评估目录。"""
+"""Create a structurally fixed, repeatable evaluation directory from evals.json."""
 
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ except ImportError:
 def _skill_name(skill_path: Path) -> str:
     skill_md = skill_path / "SKILL.md"
     if not skill_md.is_file():
-        raise ValueError("目标目录缺少 SKILL.md")
+        raise ValueError("target directory is missing SKILL.md")
     frontmatter, _ = parse_frontmatter(skill_md.read_text(encoding="utf-8"))
     name = frontmatter.get("name", "").strip()
     if not name:
-        raise ValueError("SKILL.md 缺少 name")
+        raise ValueError("SKILL.md is missing name")
     return name
 
 
@@ -39,13 +39,13 @@ def build_evaluation_plan(
 ) -> tuple[Path, dict[str, object], list[tuple[Path, dict[str, object]]], list[Path]]:
     skill = Path(skill_path).expanduser().resolve()
     if not skill.is_dir():
-        raise ValueError(f"Skill 目录不存在：{skill}")
+        raise ValueError(f"Skill directory does not exist: {skill}")
     if mode not in {"create", "improve"}:
-        raise ValueError("mode 必须是 create 或 improve")
+        raise ValueError("mode must be 'create' or 'improve'")
     if iteration < 1:
-        raise ValueError("iteration 必须大于等于 1")
+        raise ValueError("iteration must be >= 1")
     if not 1 <= repetitions <= 20:
-        raise ValueError("repetitions 必须在 1 到 20 之间")
+        raise ValueError("repetitions must be between 1 and 20")
 
     name = _skill_name(skill)
     workspace_path = (
@@ -65,7 +65,7 @@ def build_evaluation_plan(
             verify_snapshot(workspace_path)
         except ValueError as exc:
             raise ValueError(
-                f"整改评估需要完整的写入前快照；先运行 snapshot_skill.py。{exc}"
+                f"improve evaluation requires a complete pre-write snapshot; run snapshot_skill.py first. {exc}"
             ) from exc
 
     iteration_path = workspace_path / f"iteration-{iteration}"
@@ -84,7 +84,7 @@ def build_evaluation_plan(
                 input_path = eval_path.parent / input_path
             input_path = input_path.resolve()
             if not input_path.exists():
-                raise ValueError(f"评估输入文件不存在：{input_path}")
+                raise ValueError(f"evaluation input file does not exist: {input_path}")
             resolved_files.append(str(input_path))
         metadata = {
             "eval_id": item["id"],
@@ -156,7 +156,7 @@ def prepare_evaluation(
         repetitions=repetitions,
     )
     if iteration_path.exists():
-        raise FileExistsError(f"iteration 已存在，拒绝覆盖：{iteration_path}")
+        raise FileExistsError(f"iteration already exists, refusing to overwrite: {iteration_path}")
 
     payload = {
         "status": "dry-run" if dry_run else "created",
@@ -186,23 +186,23 @@ def prepare_evaluation(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="创建结构固定的 Skill 评估目录")
-    parser.add_argument("skill_path", help="目标 Skill 目录")
+    parser = argparse.ArgumentParser(description="Create a structurally fixed Skill evaluation directory")
+    parser.add_argument("skill_path", help="target Skill directory")
     parser.add_argument(
         "--mode",
         choices=("create", "improve"),
         required=True,
-        help="create 与普通 Agent 比较；improve 与整改前快照比较",
+        help="'create' compares against a regular Agent; 'improve' compares against the pre-remediation snapshot",
     )
-    parser.add_argument("--iteration", type=int, required=True, help="评估轮次，从 1 开始")
+    parser.add_argument("--iteration", type=int, required=True, help="evaluation round, starting from 1")
     parser.add_argument(
         "--workspace",
-        help="评估工作目录；Skill 位于 skills 扫描目录时，默认使用其同级的 skill-workspaces",
+        help="working directory; when the Skill sits in a scan directory called 'skills', the default is its sibling skill-workspaces",
     )
-    parser.add_argument("--eval-set", help="evals.json 路径，默认读取目标 Skill")
-    parser.add_argument("--repetitions", type=int, default=1, help="每种配置运行次数")
-    parser.add_argument("--dry-run", action="store_true", help="只显示计划，不写入")
-    parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
+    parser.add_argument("--eval-set", help="path to evals.json; defaults to the target Skill's evals/evals.json")
+    parser.add_argument("--repetitions", type=int, default=1, help="run count per configuration")
+    parser.add_argument("--dry-run", action="store_true", help="only show the plan, do not write")
+    parser.add_argument("--json", action="store_true", dest="as_json", help="emit JSON output")
     return parser
 
 
@@ -224,10 +224,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
-        status = "仅预览" if payload["status"] == "dry-run" else "已创建"
-        print(f"{status}：{payload['iteration_path']}")
-        print(f"运行数：{payload['runs']}")
-        print(f"运行计划：{payload['run_plan']}")
+        status = "preview only" if payload["status"] == "dry-run" else "created"
+        print(f"{status}: {payload['iteration_path']}")
+        print(f"runs: {payload['runs']}")
+        print(f"run plan: {payload['run_plan']}")
     return 0
 
 

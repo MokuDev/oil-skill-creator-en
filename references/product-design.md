@@ -1,146 +1,146 @@
-# Skill 产品设计
+# Skill product design
 
-## 先判断价值
+## Judge value first
 
-一个 Skill 至少应当改善以下一项：
+A Skill should improve at least one of the following:
 
-- 普通 Agent 经常遗漏关键步骤；
-- 同一流程反复发生，每次都在重新摸索；
-- 输出需要稳定格式、文件或验证；
-- 依赖、配置、权限和失败后的替代方法复杂；
-- 需要把个人经验整理成可重复使用的判断方法；
-- 需要明确的人机协作节点。
+- A regular Agent often misses critical steps;
+- The same workflow happens repeatedly, with the solution re-discovered every time;
+- The output needs a stable format, file or validation;
+- Dependencies, configuration, permissions, and the fallback after failure are complex;
+- Personal experience needs to be turned into reusable judgement rules;
+- Explicit human-AI collaboration checkpoints are needed.
 
-如果只是一次任务、简单提醒或普通 Agent 已能稳定完成，优先使用短文档、模板或独立脚本。Skill 不是默认答案。
+If the need is one-shot, a simple reminder, or something a regular Agent already handles stably, prefer a short doc, a template, or a standalone script. A Skill is not the default answer.
 
-## 创建前需要明确的内容
+## Clarify before creating
 
-创建前先回答下面的问题。能够从现有信息得到的内容不要再问；缺失并且会影响结果时，一次问完。
+Answer these questions before creating. Do not ask again for answers you can already derive from existing context; ask everything missing that actually affects the result in one batch.
 
-| 项目 | 要回答的问题 |
+| Item | Question to answer |
 | --- | --- |
-| 用户 | 谁会在什么环境中使用 |
-| 问题 | 哪个重复问题值得被解决 |
-| 当前做法 | 不使用 Skill 时哪里不稳定或低效 |
-| 预期改善 | 使用后能看到或测量到什么变化 |
-| 输入 | 用户需要提供什么 |
-| 输出 | 最终交付什么，放在哪里 |
-| 边界 | 明确不做什么，交给谁处理 |
-| 风险 | 权限、隐私、覆盖、成本和平台限制 |
-| 类型 | 客观型、主观型或混合型 |
+| User | Who will use this, in which environment |
+| Problem | Which recurring problem is worth solving |
+| Current approach | What becomes unstable or inefficient without a Skill |
+| Expected improvement | What observable or measurable change comes from using it |
+| Inputs | What the user must provide |
+| Outputs | What gets delivered, and where it lands |
+| Boundaries | What is explicitly out of scope, and who owns it |
+| Risks | Permissions, privacy, overwrite, cost and platform limits |
+| Type | Objective, subjective, or mixed |
 
-不要把这张表机械写进每个 Skill。它用于设计决策，只有真正影响使用的内容才进入发布文档。
+Do not mechanically paste this table into every Skill. It is for design decisions; only what truly affects usage enters the published docs.
 
-## 首次使用
+## First use
 
-默认静默完成能够自动发现、风险低并且可以撤销的准备工作。只有确实缺少用户决定时才询问。
+By default, silently complete preparation work that can be auto-discovered, is low-risk, and is reversible. Only ask the user when a real decision is missing.
 
-| 行为 | 默认处理 |
+| Behavior | Default handling |
 | --- | --- |
-| 检测操作系统、命令、版本、目录和已有配置 | 静默执行 |
-| 创建无冲突的工作目录和缓存 | 自动执行 |
-| 读取已有偏好并复用 | 自动执行 |
-| 迁移配置且能保留原文件 | 自动执行并汇报 |
-| 登录、输入密钥、安装系统软件 | 先说明影响并询问 |
-| 覆盖、删除、上传、发布或外部写入 | 必须获得授权 |
-| 主观方向会显著改变结果 | 集中询问一次 |
+| Detect OS, commands, versions, directories and existing config | Run silently |
+| Create conflict-free working directories and caches | Run automatically |
+| Read existing preferences and reuse them | Run automatically |
+| Migrate config while keeping the original file | Run automatically and report |
+| Sign in, enter secrets, install system software | Explain impact and ask first |
+| Overwrite, delete, upload, publish or external write | Require explicit authorization |
+| Subjective direction that materially changes the result | Ask once, grouped |
 
-静默不是隐藏。完成后用一句话说明自动完成了什么；失败时说明停在哪一步。
+Silent is not hidden. Say in one sentence what was completed automatically; on failure, say where it stopped.
 
-## Agent 与程序的边界
+## Agent vs. program boundary
 
-优先程序化的信号：
+Signals that favor programs:
 
-- 输入输出能被明确描述；
-- 同样输入应产生同样结果；
-- 每次都必须执行；
-- 能用明确结果判断成功或失败；
-- 漏做会造成较大损失；
-- 多个执行者正在重复实现同一逻辑。
+- Inputs and outputs can be described precisely;
+- Same input should produce the same output;
+- Must be executed every time;
+- Success or failure can be judged by an explicit result;
+- Missing the step causes significant loss;
+- Multiple executors are reimplementing the same logic.
 
-保留给 Agent 的信号：
+Signals reserved for the Agent:
 
-- 需要理解用户真正想解决的问题；
-- 多种策略都合理，需要结合上下文选择；
-- 需要语义、审美或编辑判断；
-- 例外情况无法穷举；
-- 必须与用户协商取舍。
+- Understanding the underlying problem the user means to solve;
+- Multiple reasonable strategies that depend on context;
+- Semantic, aesthetic or editorial judgement;
+- Exceptions that cannot be exhaustively enumerated;
+- Trade-offs that must be negotiated with the user.
 
-规则固定时由程序执行；需要理解语义或权衡时由 Agent 判断。不要让 Agent 逐条复述脚本内部流程，也不要把主观判断写成看似确定的代码。
+When rules are fixed, programs run them; when semantics or trade-offs matter, the Agent judges. Do not make the Agent restate a script's internal steps line by line, and do not dress subjective judgement up as deterministic code.
 
-## 流程而非规则树
+## Flow over rule trees
 
-Skill 应提供一条可适应上下文的工作流，而不是枚举越来越多的具体情况。
+A Skill should offer a context-adaptable workflow rather than enumerate increasingly specific cases.
 
-- 写清阶段目标、输入输出、判断依据、必要分支、恢复与停止条件。
-- 只有分支有限、条件客观、处理稳定时，才固化为程序或决策表。
-- 需要语义、策略或审美判断时，给出原则和证据要求，让 Agent 结合上下文选择。
-- 新问题先寻找已有流程缺口，不为单次失败添加产品名、固定措辞、特殊路径或一次性例外。
-- 当规则持续增加却不能提升真实结果时，回退到更简单的流程并重新评估。
+- State the stage goal, inputs and outputs, judgement criteria, required branches, recovery and stop conditions;
+- Only fix into a program or decision table when branches are finite, conditions are objective, and handling is stable;
+- When semantics, strategy or aesthetic judgement matters, give the principle and evidence requirement, and let the Agent combine with context;
+- For new problems look for an existing-flow gap first; do not add a product name, fixed wording, special path or one-shot exception for a single failure;
+- When rules keep growing without improving real outcomes, fall back to a simpler flow and reassess.
 
-## 大型产物
+## Large artifacts
 
-产物很长不代表一定要拆分。出现以下情况时，才考虑分段生成：
+A long artifact does not in itself mean splitting is needed. Consider partitioned generation only when:
 
-- 一次生成经常失败、遗漏或前后不一致；
-- 修改局部内容需要重写整个产物；
-- 产物存在稳定、相对独立的组成部分；
-- 最终组合可以由程序确定完成。
+- Single-shot generation often fails, drops content, or contradicts itself across sections;
+- Editing a local section requires rewriting the whole artifact;
+- The artifact has stable, relatively independent components;
+- The final combination can be assembled deterministically.
 
-采用分段生成时：
+When you split:
 
-1. 先定义片段边界、输入输出和稳定标识；
-2. 让每个片段能够独立生成、检查和重做；
-3. 尽早保存可用的中间产物；
-4. 用脚本验证并组装最终产物；
-5. 局部修改只重做受影响的片段。
+1. Define section boundaries, inputs and outputs, and stable identifiers;
+2. Let each section be generated, checked and redone independently;
+3. Save usable intermediates early;
+4. Validate and assemble the final artifact with scripts;
+5. Local edits only redo affected sections.
 
-不要按固定行数机械拆分。组成部分彼此强依赖时，使用固定骨架和内容插槽保持整体一致，不要强行切成任意小块。
+Do not split mechanically by line count. When parts strongly depend on each other, use a fixed skeleton with content slots to keep the whole consistent; do not force arbitrary fragments.
 
-## 可复用操作页面
+## Reusable operation pages
 
-用户需要设置多项关联配置、反复预览调整，或者必须进行主观确认时，考虑随 Skill 提供可复用的配置页、编辑器或预览页。
+When users need to configure several related options, repeatedly preview and adjust, or carry out a subjective confirmation, ship a reusable config page, editor or preview page with the Skill.
 
-- 页面读取稳定的配置文件或 manifest，不依赖 Agent 临时拼接数据；
-- 程序负责启动页面、加载数据、保存结果和检查保存状态；
-- Agent 负责说明入口，并在用户完成操作后继续流程；
-- 页面和数据分开维护，不要让 Agent 每次重新生成页面；
-- 简单选择继续使用对话或配置文件，不要为了形式完整而增加页面。
+- The page reads a stable config file or manifest and does not rely on the Agent to assemble data ad hoc;
+- The program launches the page, loads data, saves results and checks save status;
+- The Agent explains the entry point and resumes the flow once the user is done;
+- Pages and data are maintained separately; do not have the Agent regenerate the page every time;
+- For simple choices, keep using the dialogue or a config file; do not add a page just for the sake of completeness.
 
-优先使用本地、可重复启动的页面。确实依赖特定平台界面时，在兼容性中说明，并提供可行的替代路径。
+Prefer local, repeatedly relaunchable pages. When the page genuinely depends on a specific platform UI, document it under compatibility and provide a viable alternative.
 
-## Token 控制
+## Token control
 
-- description 只承担触发，不写完整流程。
-- SKILL.md 只保留主路径、关键分支和资源导航。
-- references 按决策点读取，不在开头一次加载全部内容。
-- 脚本输出默认简洁，详细诊断写入文件或通过 `--json` 请求。
-- 不在多个文件重复同一规则；指定唯一事实来源。
-- 大型数据格式、平台细节和模板放到独立资源。
-- 评估 Token 时同时看输入上下文、工具输出和返工次数，不能只看 SKILL.md 字数。
+- `description` only handles triggering; never restate the full workflow;
+- `SKILL.md` keeps only the main path, key branches and resource navigation;
+- `references/` is read at decision points, not loaded in full at the start;
+- Script output is concise by default; detailed diagnostics go to a file or are requested via `--json`;
+- Do not duplicate the same rule across files; pick a single source of truth;
+- Large data formats, platform details and templates go in separate resources;
+- When measuring tokens, look at input context, tool output and rework cycles together; do not judge by `SKILL.md` character count alone.
 
-更短不一定更省 Token。能减少探索、错误和返工的程序，即使增加少量说明，也可能降低总成本。
+Shorter is not always cheaper in tokens. A program that reduces exploration, errors and rework may lower total cost even if it adds some prose.
 
-## 从效果反馈改进 Skill
+## Improving a Skill from outcome feedback
 
-任务效果不好时，先保存输入、输出、运行环境、工具结果和用户反馈，再判断问题来自哪里：
+When task outcomes are poor, first save the inputs, outputs, runtime, tool results and user feedback, then decide where the problem comes from:
 
-1. 触发或边界错误；
-2. 首次使用流程缺失；
-3. 默认值不合理；
-4. 本应程序化的步骤交给了 Agent；
-5. 缺少验证、失败后的替代方法，或者重复运行会破坏已有结果；
-6. 平台或宿主假设错误；
-7. README 没有讲清楚；
-8. 测试集合没有覆盖该类风险；
-9. 输入信息不足、执行者偏差或外部能力限制，并非 Skill 缺陷。
+1. Trigger or boundary error;
+2. First-use flow missing;
+3. Unreasonable defaults;
+4. A step that should be a program was delegated to the Agent;
+5. Missing validation, missing fallback, or repeated runs corrupt existing results;
+6. Platform or host assumption is wrong;
+7. The README did not explain it clearly;
+8. The test set does not cover this risk class;
+9. Insufficient input, executor drift or external capability limits — not a Skill defect.
 
-只有确认 Skill 的设计造成或放大了问题，才修改 Skill：
+Only modify the Skill when its design causes or amplifies the problem:
 
-- 语义问题修改流程或判断原则；
-- 结果固定的问题修改程序或校验；
-- 主观问题根据人类反馈调整。
+- For semantic problems, change the flow or the judgement principle;
+- For fixed-result problems, change the program or the check;
+- For subjective problems, adjust from human feedback.
 
-修改后使用同类请求复验，并确认没有限制原本合理的处理方式。
+After the change, re-verify with similar requests and confirm reasonable handling has not been unnecessarily restricted.
 
-单次偶发现象只留在外部 workspace。只有换一个任务仍然成立的经验，才能写成通用原则、脚本或回归测试。具体任务、产品名、用户路径和修改历史不进入正式 Skill。
+One-off anomalies stay in the external workspace. Only experience that remains true when the task changes earns its way into a general principle, a script, or a regression test. Specific tasks, product names, user paths and change histories do not enter the formal Skill.

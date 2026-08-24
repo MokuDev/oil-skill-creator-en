@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""生成跨平台的本地评审页面，默认隐藏候选版本身份。"""
+"""Generate a cross-platform local review page that hides candidate identity by default."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ MAX_EMBED_BYTES = 8 * 1024 * 1024
 
 
 HTML_TEMPLATE = """<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,11 +41,11 @@ HTML_TEMPLATE = """<!doctype html>
 </head>
 <body>
 <h1 id="title"></h1>
-<p class="muted">默认隐藏候选版本身份。先查看输出并填写反馈，再查看汇总；不要根据版本名称判断质量。</p>
+<p class="muted">Candidate identities are hidden by default. Review the outputs and leave feedback before looking at the aggregate; do not judge quality from version names.</p>
 <div id="content"></div>
-<h2>对比结果</h2>
+<h2>Comparison results</h2>
 <div id="benchmark"></div>
-<p><button id="export" type="button">导出 feedback.json</button> <span id="status" class="muted" aria-live="polite"></span></p>
+<p><button id="export" type="button">Export feedback.json</button> <span id="status" class="muted" aria-live="polite"></span></p>
 <script id="review-data" type="application/json">__DATA__</script>
 <script>
 const data=JSON.parse(document.getElementById('review-data').textContent);
@@ -60,8 +60,8 @@ for(const item of data.evals){
   const grid=document.createElement('div'); grid.className='grid';
   for(const run of item.runs){
     const card=document.createElement('article'); card.className='card';
-    const title=document.createElement('h3'); title.textContent=run.candidate+' · 第 '+run.repetition+' 次'; card.appendChild(title);
-    if(run.files.length===0){const p=document.createElement('p');p.className='muted';p.textContent='没有输出文件';card.appendChild(p)}
+    const title=document.createElement('h3'); title.textContent=run.candidate+' · run '+run.repetition; card.appendChild(title);
+    if(run.files.length===0){const p=document.createElement('p');p.className='muted';p.textContent='No output files';card.appendChild(p)}
     for(const file of run.files){
       const label=document.createElement('p'); label.className='badge'; label.textContent=file.name+' · '+file.size+' bytes'; card.appendChild(label);
       if(file.data_url!==null){const img=document.createElement('img');img.src=file.data_url;img.alt=file.name;card.appendChild(img)}
@@ -69,11 +69,11 @@ for(const item of data.evals){
     }
     if(run.grading.length){
       const ul=document.createElement('ul');
-      for(const grade of run.grading){const li=document.createElement('li');li.className=grade.passed?'pass':'fail';li.textContent=(grade.passed?'通过：':'失败：')+grade.text+' — '+grade.evidence;ul.appendChild(li)}
+      for(const grade of run.grading){const li=document.createElement('li');li.className=grade.passed?'pass':'fail';li.textContent=(grade.passed?'pass: ':'fail: ')+grade.text+' — '+grade.evidence;ul.appendChild(li)}
       card.appendChild(ul);
     }
-    const label=document.createElement('label'); label.className='badge'; label.htmlFor=run.candidate_id; label.textContent='反馈'; card.appendChild(label);
-    const area=document.createElement('textarea'); area.id=run.candidate_id; area.dataset.candidateId=run.candidate_id; area.placeholder='记录可复用的反馈；没有问题可以留空'; area.value=drafts[run.candidate_id]||'';
+    const label=document.createElement('label'); label.className='badge'; label.htmlFor=run.candidate_id; label.textContent='Feedback'; card.appendChild(label);
+    const area=document.createElement('textarea'); area.id=run.candidate_id; area.dataset.candidateId=run.candidate_id; area.placeholder='Record reusable feedback; leave empty if there are no issues'; area.value=drafts[run.candidate_id]||'';
     area.addEventListener('input',()=>{drafts[run.candidate_id]=area.value;try{localStorage.setItem(storageKey,JSON.stringify(drafts))}catch(_error){storageAvailable=false}}); card.appendChild(area);
     grid.appendChild(card);
   }
@@ -82,16 +82,16 @@ for(const item of data.evals){
 const bench=document.getElementById('benchmark');
 if(data.benchmark.length){
   const table=document.createElement('table');
-  table.innerHTML='<thead><tr><th>候选</th><th>运行次数</th><th>通过率</th><th>秒</th><th>Token</th></tr></thead>';
+  table.innerHTML='<thead><tr><th>Candidate</th><th>Runs</th><th>Pass rate</th><th>Seconds</th><th>Tokens</th></tr></thead>';
   const body=document.createElement('tbody');
   for(const row of data.benchmark){const tr=document.createElement('tr');for(const value of [row.candidate,row.runs,row.pass_rate,row.duration,row.tokens]){const td=document.createElement('td');td.textContent=value;tr.appendChild(td)}body.appendChild(tr)}
   table.appendChild(body);bench.appendChild(table);
-}else{bench.textContent='尚未生成对比报告';bench.className='muted'}
+}else{bench.textContent='No comparison report generated yet';bench.className='muted'}
 document.getElementById('export').addEventListener('click',()=>{
   const reviews=[...document.querySelectorAll('textarea')].map(area=>({candidate_id:area.dataset.candidateId,feedback:area.value,timestamp:new Date().toISOString()}));
   const blob=new Blob([JSON.stringify({status:'complete',reviews},null,2)+'\\n'],{type:'application/json'});
   const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='feedback.json';link.click();URL.revokeObjectURL(link.href);
-  document.getElementById('status').textContent=storageAvailable?'已导出；本机草稿仍会保留':'已导出';
+  document.getElementById('status').textContent=storageAvailable?'exported; local drafts are preserved':'exported';
 });
 </script>
 </body>
@@ -105,8 +105,8 @@ def _metric(value: object, percent: bool = False) -> str:
     mean = float(value["mean"])
     stddev = float(value.get("stddev") or 0)
     if percent:
-        return f"{mean * 100:.1f}% ± {stddev * 100:.1f}%"
-    return f"{mean:.2f} ± {stddev:.2f}"
+        return f"{mean * 100:.1f}% +/- {stddev * 100:.1f}%"
+    return f"{mean:.2f} +/- {stddev:.2f}"
 
 
 def _candidate_map(configurations: list[str], iteration: object, reveal: bool) -> dict[str, str]:
@@ -116,7 +116,7 @@ def _candidate_map(configurations: list[str], iteration: object, reveal: bool) -
         configurations,
         key=lambda name: hashlib.sha256(f"{iteration}:{name}".encode()).hexdigest(),
     )
-    return {name: f"候选 {chr(65 + index)}" for index, name in enumerate(ordered)}
+    return {name: f"Candidate {chr(65 + index)}" for index, name in enumerate(ordered)}
 
 
 def _output_files(outputs: Path) -> list[dict[str, object]]:
@@ -133,7 +133,7 @@ def _output_files(outputs: Path) -> list[dict[str, object]]:
                 text = path.read_text(encoding="utf-8")
                 preview = text[:MAX_PREVIEW_CHARS]
                 if len(text) > MAX_PREVIEW_CHARS:
-                    preview += "\n…预览已截断…"
+                    preview += "\n...preview truncated..."
             except UnicodeDecodeError:
                 preview = None
         mime_type = IMAGE_MIME_TYPES.get(path.suffix.lower())
@@ -156,23 +156,23 @@ def _output_files(outputs: Path) -> list[dict[str, object]]:
 def build_review_data(root: Path, reveal: bool = False) -> tuple[dict[str, Any], dict[str, Any]]:
     plan = load_json(root / "run_plan.json")
     if not isinstance(plan, dict) or not isinstance(plan.get("runs"), list):
-        raise ValueError("run_plan.json 缺少 runs 数组")
+        raise ValueError("run_plan.json is missing the runs array")
     configurations = plan.get("configurations")
     if not isinstance(configurations, list) or not all(
         isinstance(value, str) for value in configurations
     ):
-        raise ValueError("run_plan.json 缺少 configurations")
+        raise ValueError("run_plan.json is missing configurations")
     labels = _candidate_map(configurations, plan.get("iteration"), reveal)
     grouped: dict[str, dict[str, Any]] = {}
     manifest_runs: dict[str, str] = {}
     for run in plan["runs"]:
         if not isinstance(run, dict):
-            raise ValueError("run_plan.runs 项必须是对象")
+            raise ValueError("each run_plan.runs entry must be an object")
         run_dir = Path(str(run.get("run_dir", ""))).expanduser().resolve()
         try:
             run_dir.relative_to(root)
         except ValueError as exc:
-            raise ValueError(f"run_dir 越出 iteration：{run_dir}") from exc
+            raise ValueError(f"run_dir escapes the iteration directory: {run_dir}") from exc
         run_id = str(run.get("run_id"))
         candidate_id = "review-" + hashlib.sha256(run_id.encode()).hexdigest()[:12]
         manifest_runs[candidate_id] = run_id
@@ -245,7 +245,7 @@ def generate_review(
     )
     manifest_path = root / "review_manifest.json"
     if not replace and (output_path.exists() or manifest_path.exists()):
-        raise FileExistsError("评审输出已存在；使用 --replace 明确覆盖")
+        raise FileExistsError("review output already exists; pass --replace to overwrite explicitly")
     data, manifest = build_review_data(root, reveal=reveal)
     encoded = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c").replace(
         ">", "\\u003e"
@@ -265,11 +265,11 @@ def generate_review(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="生成默认隐藏版本身份的本地 Skill 评审页")
-    parser.add_argument("iteration_path", help="iteration-N 目录")
-    parser.add_argument("--output", help="HTML 输出路径，默认 iteration/review.html")
-    parser.add_argument("--reveal", action="store_true", help="在页面中显示真实配置名")
-    parser.add_argument("--replace", action="store_true", help="明确覆盖已有评审输出")
+    parser = argparse.ArgumentParser(description="generate a local Skill review page that hides version identity by default")
+    parser.add_argument("iteration_path", help="iteration-N directory")
+    parser.add_argument("--output", help="HTML output path, default is iteration/review.html")
+    parser.add_argument("--reveal", action="store_true", help="show the real configuration names in the page")
+    parser.add_argument("--replace", action="store_true", help="explicitly overwrite an existing review output")
     return parser
 
 
@@ -285,8 +285,8 @@ def main(argv: list[str] | None = None) -> int:
     except (ValueError, FileExistsError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-    print(f"已创建评审页：{output}")
-    print(f"候选映射：{manifest}")
+    print(f"review page created: {output}")
+    print(f"candidate mapping: {manifest}")
     return 0
 
 

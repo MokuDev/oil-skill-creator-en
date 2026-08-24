@@ -2,7 +2,7 @@
      width="1200" height="420" viewBox="0 0 1200 420"
      role="img" aria-labelledby="title desc">
   <title id="title">oil-skill-creator</title>
-  <desc id="desc">像做产品一样写 Skill：先判断价值，固化流程，再用真实结果验证。</desc>
+  <desc id="desc">Build Skills like products: judge the value first, lock the stable steps into code, then verify with real results.</desc>
 
   <defs>
     <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
@@ -33,9 +33,9 @@
       <text x="52" y="140" fill="#171717" font-size="60" font-weight="820" letter-spacing="-2.5">oil-skill-creator</text>
       <path d="M54 157C162 153 305 154 462 158" fill="none" stroke="#F4CA5F" stroke-width="16" stroke-linecap="square" opacity="0.88"/>
 
-      <text x="56" y="218" fill="#171717" font-size="32" font-weight="760">像做产品一样写 Skill</text>
-      <text x="56" y="258" fill="#65645F" font-size="20" font-weight="510">先判断它是否值得做，再把稳定步骤交给程序。</text>
-      <text x="56" y="290" fill="#65645F" font-size="20" font-weight="510">效果不好时，回到流程和证据，而不是继续堆规则。</text>
+      <text x="56" y="218" fill="#171717" font-size="32" font-weight="760">Build Skills like products</text>
+      <text x="56" y="258" fill="#65645F" font-size="20" font-weight="510">Judge whether it is worth doing first, then hand the stable steps to a program.</text>
+      <text x="56" y="290" fill="#65645F" font-size="20" font-weight="510">When results disappoint, return to the flow and the evidence instead of piling on rules.</text>
 
       <g id="process" transform="translate(58 333)"
          font-family="ui-monospace, SFMono-Regular, Menlo, monospace"

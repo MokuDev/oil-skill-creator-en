@@ -1,42 +1,42 @@
 # __SKILL_NAME__
 
-## 有什么用
+## What it is for
 
 __SUMMARY__
 
-说明不使用这个 Skill 时哪里容易出错，以及使用后会得到什么。
+Describe where things tend to go wrong without this Skill and what improves once it is used.
 
-## 安装
+## Installation
 
-提供两种安装方式：
+Provide both installation paths:
 
-1. 给出完整 GitHub 仓库地址，让用户可以复制地址并告诉 Agent 安装这个 Skill。
-2. 给出已经替换为真实仓库名的 `npx skills add <owner>/<repository>` 命令。
+1. The full GitHub repo URL, so users can copy it and tell the Agent to install this Skill.
+2. The `npx skills add <owner>/<repository>` command, with `<owner>/<repository>` already replaced by the real values.
 
-说明两种方式各自需要的条件。`npx` 只属于安装工具时，不要把 Node.js 写成 Skill 的运行依赖。
+Describe what each option needs. When `npx` is only an install tool, do not list Node.js as a Skill runtime dependency.
 
-## 配置
+## Configuration
 
-说明首次使用需要完成的配置、保存位置和环境变量。没有额外配置时明确写出。
+Describe the configuration required for first use, where it is stored, and the environment variables involved. When no extra configuration is needed, state so explicitly.
 
-不要把密钥、个人绝对路径或本机配置提交到仓库。
+Do not commit secrets, personal absolute paths or local configuration to the repo.
 
-## 使用
+## Usage
 
-说明用户应如何用自然语言触发，以及有哪些常用入口。不要复制 SKILL.md 的内部执行细节。
+Describe how the user should trigger this Skill in natural language and what the common entry points are. Do not copy the internal execution details from `SKILL.md`.
 
-## 兼容性与依赖
+## Compatibility and dependencies
 
-列出实际验证过的操作系统、运行环境、系统命令、宿主必须提供的能力和外部服务。
+List the operating systems, runtime, system commands, capabilities the host must provide, and external services that have actually been verified.
 
-## 数据与适用边界
+## Data and applicable scope
 
-说明数据是否离开本机、需要哪些权限、是否产生费用，以及哪些相似任务不适用。
+State whether data leaves the local machine, what permissions are required, whether costs are generated, and which similar tasks are out of scope.
 
-## 输出
+## Output
 
-说明最终文件、目录或回复内容，以及默认保存位置。
+Describe the final files, directories or reply content, and the default save location.
 
-## 测试
+## Testing
 
-说明如何运行脚本测试、静态校验和 Skill 效果评估。
+Describe how to run script tests, static validation, and Skill outcome evaluation.

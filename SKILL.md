@@ -1,165 +1,165 @@
 ---
 name: oil-skill-creator
-description: 创建、评审、整改和发布 Skill。用户想从零创建 Skill、评审现有 Skill、检查它是否真正有用、修复触发或执行流程，或者改善首次使用、稳定性、Token 开销、文件分层、弱模型可读性与跨平台兼容性时使用。不要用于执行目标 Skill 负责的实际任务，也不要因为普通的编码、设计或写作请求触发。
+description: Create, review, remediate and publish Skills. Use when the user wants to build a Skill from scratch, review an existing Skill, check whether it is genuinely useful, fix its trigger or execution flow, or improve first-use, stability, token overhead, file layering, weak-model readability and cross-platform compatibility. Do not use for executing the actual tasks the target Skill is responsible for, and do not trigger for ordinary coding, design or writing requests.
 license: MIT
-compatibility: 核心脚本只使用 Python 3 标准库，支持 macOS、Windows 和 Linux；独立效果评估需要宿主能够启动子 Agent，或提供相同用途的隔离执行能力。
+compatibility: The core scripts only use the Python 3 standard library and support macOS, Windows and Linux. Independent outcome evaluation requires a host that can launch sub-Agents, or an equivalent isolated-execution capability.
 ---
 
 # oil-skill-creator
 
-把 Skill 当作需要长期维护的工具。先确认它解决了重复问题，再让它容易开始、稳定执行、能够验证，并如实说明兼容范围。不要把一次任务的提示词包装成 Skill。
+Treat Skills as tools that need long-term maintenance. First confirm they solve a recurring problem, then make them easy to start, stable to run and possible to verify, and state the compatibility scope honestly. Do not wrap a one-shot prompt as a Skill.
 
-## 先选择模式
+## Choose a mode first
 
-| 模式 | 适用情况 | 路径 | 默认停止点 |
+| Mode | When it fits | Path | Default stop point |
 | --- | --- | --- | --- |
-| 创建 | 还没有 Skill | 产品定义 → 实现 → 校验 → 评估 → 按需发布 | 交付可用 Skill |
-| 整改 | 已有 Skill，用户要求修复或优化 | 读取 → 静态检查 → 快照 → 局部修改 → 复验 | 问题修复且无回归 |
-| Review | 用户只要求评审、审计或找问题 | 读取 → 静态检查 → 流程检查 → 报告 | 报告交付后停止 |
+| Create | No Skill exists yet | Product definition -> Implementation -> Validation -> Evaluation -> Publish on demand | Deliver a usable Skill |
+| Remediate | A Skill exists; the user asked for fixes or improvements | Read -> Static check -> Snapshot -> Scoped edits -> Re-verify | Issues fixed with no regressions |
+| Review | The user only wants a review, audit or problem hunt | Read -> Static check -> Process check -> Report | Deliver the report, then stop |
 
-Review 默认只读，不创建快照、不修改、不打包。整改禁止用脚手架重建已有目录。用户后续授权整改时，从整改路径重新开始，并在第一次写入前保存快照。
+Review is read-only by default: no snapshot created, no modifications, no package built. Remediate must not use the scaffolder to rebuild an existing directory. If the user later authorizes remediation, restart from the remediate path and save a snapshot before the first write.
 
-## 开始前
+## Before starting
 
-已有 Skill 时，先完整读取 `SKILL.md`，再按导航只读取当前模式和问题需要的资源。检查相关目录、脚本、测试、评估用例、README 和平台假设；不要重复询问已有信息。
+When a Skill already exists, fully read `SKILL.md` first, then load only the resources required by the current mode and the problem at hand. Inspect related directories, scripts, tests, evaluation cases, the README and platform assumptions; do not ask the user again for information that is already on disk.
 
-“静默”表示不需要用户选择时直接完成检查，不表示隐藏过程。完成后简要报告检查结果。
+"Silent" means completing checks directly when no user choice is required, not hiding the process. Briefly report the check result when finished.
 
-只有目标或交付物不清楚、需要新增权限或服务、可能覆盖内容，或者主观方向会改变结果时才询问。将相关问题一次问完。
+Only ask when the goal or deliverable is unclear, when new permissions or services are needed, when content may be overwritten, or when a subjective direction would change the outcome. Ask all related questions at once.
 
-按以下方式分工：
+Partition the work as follows:
 
-- Agent 判断价值、边界、架构、例外和主观质量。
-- 程序执行确定、重复、可验证、失败敏感的步骤。
-- 子 Agent 隔离触发和执行；人类判断审美、文案和整体体验。
+- The Agent judges value, boundaries, architecture, exceptions and subjective quality.
+- Programs execute deterministic, repeatable, verifiable, failure-sensitive steps.
+- Sub-Agents isolate triggering and execution; humans judge aesthetics, copy and overall experience.
 
-默认创建不依赖特定宿主的 Skill。正式指令、参考资料、README、目录名和示例使用“Agent、宿主、能力、隔离执行者”等通用名称，不写当前宿主的品牌、专属目录、专属命令或私有 API。
+By default, build Skills that do not depend on a specific host. Formal instructions, references, the README, directory names and examples use generic terms such as "Agent, host, capability, isolated runner", never the current host's brand, dedicated directories, dedicated commands or private APIs.
 
-如果核心能力确实依赖某个宿主，将专用适配器与通用流程分开，并在产品定义和兼容性中说明限制与替代方案。此时不能宣称 Skill 支持所有宿主。
+If a core capability genuinely depends on a host, separate the host-only adapter from the generic flow and document the limitation and alternatives in the product definition and the compatibility section. In that case, the Skill cannot claim to support all hosts.
 
-下文的 `<python>` 表示已经找到并确认版本不低于 3.10 的 Python 解释器。程序内调用使用 `sys.executable`；macOS 和 Linux 命令行通常使用 `python3`，Windows 通常使用 `py -3`。不要假设 `python` 命令一定存在。
+Below, `<python>` stands for a Python interpreter that has been located and confirmed to be at least 3.10. Internal program calls use `sys.executable`; on macOS and Linux the command line is usually `python3`, on Windows it is usually `py -3`. Do not assume that `python` exists.
 
-## 创建路径
+## Create path
 
-先读 [产品设计](references/product-design.md)，确认问题值得做，并明确用户、当前做法、预期改善、输入、输出、边界、风险和任务类型。
+Read [Product design](references/product-design.md) first, confirm the problem is worth solving, and clarify the user, the current approach, the expected improvement, inputs, outputs, boundaries, risks and task type.
 
-如果只是一次性需求、普通 Agent 已能稳定完成，或者无法说明使用 Skill 后会改善什么，就不要强行创建。
+If the need is one-off, a regular Agent can already handle it stably, or you cannot describe what improves once the Skill is used, do not force a Skill into existence.
 
-需要目录时先预览最小骨架：
+When a directory is needed, preview the minimal skeleton first:
 
 ```text
-<python> <oil-skill-creator>/scripts/scaffold_skill.py <skill-name> --output-root <目录> --description <描述> --public --dry-run
-<python> <oil-skill-creator>/scripts/scaffold_skill.py <skill-name> --output-root <目录> --description <描述> --public
+<python> <oil-skill-creator>/scripts/scaffold_skill.py <skill-name> --output-root <directory> --description <description> --public --dry-run
+<python> <oil-skill-creator>/scripts/scaffold_skill.py <skill-name> --output-root <directory> --description <description> --public
 ```
 
-只通过 `--components` 添加当前确实需要的目录，例如 `--components scripts,tests`。不要为了示例完整而创建空资源。
+Only add directories you actually need via `--components`, for example `--components scripts,tests`. Do not create empty resources just to look complete.
 
-## Review 与整改路径
+## Review and remediate path
 
-先读 [Review 与整改规范](references/review-and-remediation.md)。Review 同时检查静态缺陷和程序无法判断的产品问题，不把“校验器通过”等同于“Skill 有用”。
+Read [Review and remediation specification](references/review-and-remediation.md) first. Review checks both static defects and product-level problems a program cannot judge; "the validator passes" is not "the Skill is useful".
 
-整改前先保存不可变基线：
+Before remediation, save an immutable baseline:
 
 ```text
 <python> <oil-skill-creator>/scripts/snapshot_skill.py <skill-path>
 ```
 
-快照默认进入外部 workspace。目标位于名为 `skills` 的扫描目录时，workspace 放到该目录同级的 `skill-workspaces/`，避免快照被识别成重复 Skill。脚本拒绝覆盖已有快照；后续基线只能指向该快照，不能指向正在编辑的目录。
+The snapshot defaults to an external workspace. When the target lives in a scan directory named `skills`, place the workspace in the sibling `skill-workspaces/` so the snapshot is not detected as a duplicate Skill. The script refuses to overwrite an existing snapshot; later baselines must point to that snapshot, not to the directory currently being edited.
 
-按 P0、P1、P2 报告证据、影响、成因、通用修复方法和验证方式。忽略不影响行为的措辞偏好，不把合理取舍当成缺陷。
+Report by P0, P1, P2 with evidence, impact, root cause, general fix and verification method. Ignore wording preferences that do not change behavior; do not treat reasonable trade-offs as defects.
 
-整改时优先修复导致问题的规则、程序接口或验证流程，再修复当前表现。保留名称、有效结构和用户已有内容；没有必要时不整份重写。
+When remediating, prefer fixing the rules, program interfaces or verification flow that caused the problem before fixing the current symptom. Keep the name, valid structure and content the user already has; do not rewrite the whole thing unless it is necessary.
 
-## 设计和编写
+## Design and authoring
 
-### 触发
+### Trigger
 
-目标 Skill 的所有触发信息只放在它的 frontmatter `description` 中。写清目标 Skill 做什么、什么时候使用、哪些相似请求不该触发，以及与其他 Skill 如何分工。不要在目标 Skill 的正文重复一套触发规则。
+All trigger information for the target Skill lives only in its frontmatter `description`. State what the target Skill does, when to use it, which similar requests should not trigger it, and how it shares responsibility with other Skills. Do not duplicate a separate trigger rule set in the target Skill's body.
 
-准备真实的正向请求和容易混淆的反向请求。需要测量触发准确性时，按 [评估规范](references/evaluation.md) 的触发评估执行；静态关键词检查不能证明触发可靠。
+Prepare real positive requests and easily confused negative requests. When trigger accuracy needs measuring, follow the trigger evaluation in the [Evaluation specification](references/evaluation.md); static keyword checks do not prove the trigger is reliable.
 
-### 首次使用和恢复
+### First use and recovery
 
-按 [产品设计](references/product-design.md) 的决策表处理首次使用、配置、需要用户确认的操作和失败恢复。能够自动发现、风险低并且可以撤销的准备工作静默完成。
+Handle first use, configuration, operations that need user confirmation and failure recovery per the decision table in [Product design](references/product-design.md). Preparation work that can be auto-discovered, is low-risk and is reversible is done silently.
 
-登录、密钥、系统安装、覆盖、删除和外部写入必须先获得授权。
+Login, secrets, system install, overwrite, delete and external write must get authorization first.
 
-目标 Skill 需要持久化配置或凭据时，按 [兼容性](references/compatibility.md) 分开设计普通配置、凭据引用和密钥存储。不要把密钥值写进 JSON、Skill 文件、日志或 Agent 上下文。这是目标 Skill 的设计与验收要求，不表示本 Skill 自带业务凭据适配器。
+When the target Skill needs persistent configuration or credentials, design regular configuration, credential references and secret storage separately per [Compatibility](references/compatibility.md). Do not put secret values into JSON, Skill files, logs or the Agent context. This is a design and acceptance requirement of the target Skill; it does not mean this Skill ships with a business credential adapter.
 
-重复运行初始化或迁移流程时，不能破坏已有配置，也不能产生重复结果。失败时保留仍然可用的中间产物，并说明失败位置、恢复方法和还没有执行的必做步骤。
+Repeated initialization or migration runs must not corrupt existing configuration and must not produce duplicate results. On failure, keep any still-usable intermediate artifacts and explain the failure location, recovery method and required steps that have not yet run.
 
-### 信息架构
+### Information architecture
 
-拆分文件前读 [信息架构](references/information-architecture.md)。主流程放在 `SKILL.md`，阶段细节放在 `references/`，结果固定的步骤放在 `scripts/`，运行结果和 Review 记录放在 Skill 外部。
+Read [Information architecture](references/information-architecture.md) before splitting files. The main flow lives in `SKILL.md`; stage details live in `references/`; steps with fixed results live in `scripts/`; run results and Review notes live outside the Skill.
 
-如果目标 Skill 会生成难以一次稳定完成或局部修改的大型产物，或者需要复杂配置、反复预览和人工调整，按 [产品设计](references/product-design.md) 设计分段产出、程序组装或可复用操作页面。
+If the target Skill will produce large artifacts that are hard to complete at once or to edit locally, or if it needs complex configuration, repeated previews and human adjustments, design split artifacts, programmatic assembly or reusable operation pages per [Product design](references/product-design.md).
 
-一步只表达一个主要动作，分支紧邻对应步骤，术语保持一致。不写具体任务、个人目录、单次候选、Review 记录、修改记录或版本历史；只写能够用于同类任务的规则、程序和回归测试。
+Each step expresses one primary action. Branches sit next to the step they belong to. Terminology stays consistent. Do not write specific tasks, personal directories, single candidates, Review notes, change logs or version histories; only write rules, programs and regression tests reusable for similar tasks.
 
-Skill 描述目标、判断原则、主流程、必要分支与停止条件，不穷举具体情境组成规则树。有限、稳定、可验证的分支交给程序；依赖语义和上下文的选择留给 Agent 判断。
+Skills describe the goal, judgement principles, main flow, required branches and stopping conditions; they do not enumerate specific scenarios into a rule tree. Finite, stable, verifiable branches go to programs; semantic and context-dependent choices stay with the Agent.
 
-Skill 不得包含与 description 不一致的隐藏行为、误导能力、越权访问或数据外传。兼容性只能声明实际实现或真实验证过的范围。
+A Skill must not contain hidden behavior that contradicts its description, misleading capability claims, unauthorized access or data exfiltration. Compatibility may only state scope that is actually implemented or genuinely verified.
 
-## 程序校验
+## Programmatic validation
 
-开发过程中运行：
+During development, run:
 
 ```text
 <python> <oil-skill-creator>/scripts/validate_skill.py <skill-path>
 ```
 
-公开发布或整改完成前运行：
+Before public release or before declaring remediation done, run:
 
 ```text
 <python> <oil-skill-creator>/scripts/validate_skill.py <skill-path> --public --strict --weak-model --universal
 ```
 
-校验器只处理能够由程序确认的问题。校验通过后，仍要检查流程含义和真实效果。只有产品明确依赖某个宿主时才省略 `--universal`，并在兼容性中说明原因。
+The validator only handles problems programs can confirm. After validation passes, process meaning and real effect still need review. Only omit `--universal` when the product explicitly depends on a specific host, and document the reason in the compatibility section.
 
-`--weak-model` 使用更严格的结构限制；`--universal` 检查通用 Skill 是否写死了宿主品牌或专属路径。
+`--weak-model` enforces stricter structural limits; `--universal` checks whether a generic Skill hardcodes a host's brand or its dedicated paths.
 
-## 效果评估
+## Outcome evaluation
 
-新建、整改改变了实际行为、用户要求证明效果，或者准备公开发布时，先读 [评估规范](references/evaluation.md)。创建模式与普通 Agent 比较；整改模式与写入前的 `skill-snapshot` 比较。
+When creating, when remediation changes actual behavior, when the user asks to prove an effect, or when preparing a public release, read the [Evaluation specification](references/evaluation.md) first. Create mode compares against a regular Agent; remediate mode compares against the pre-write `skill-snapshot`.
 
-稳定流程由程序准备：
+Fixed steps are prepared by the program:
 
 ```text
 <python> <oil-skill-creator>/scripts/prepare_evaluation.py <skill-path> --mode create --iteration 1
 <python> <oil-skill-creator>/scripts/prepare_evaluation.py <skill-path> --mode improve --iteration 1
 ```
 
-程序会检查 `evals/evals.json`，创建固定的 `with_skill`、`without_skill` 或 `old_skill` 目录，并生成 `run_plan.json`。Agent 按计划运行当前版本和基线，不自行增加目录或字段。
+The program inspects `evals/evals.json`, creates fixed `with_skill`, `without_skill` or `old_skill` directories, and emits `run_plan.json`. The Agent runs the current version and the baseline per the plan and does not invent extra directories or fields.
 
-运行完成后，程序聚合数据并生成静态评审页：
+When runs complete, the program aggregates the data and emits a static review page:
 
 ```text
 <python> <oil-skill-creator>/scripts/aggregate_evaluation.py <iteration-path>
 <python> <oil-skill-creator>/scripts/generate_review.py <iteration-path>
 ```
 
-先把候选结果、证据和对比报告交给用户；收到反馈前不要继续修改 Skill。主观结果必须由人判断，AI 只能检查明确要求或整理差异。
+Hand the candidate results, evidence and comparison report to the user first; do not keep editing the Skill before feedback arrives. Subjective results must be judged by humans; AI may only check what was explicitly asked or summarize differences.
 
-没有隔离执行能力时，要说明评估能力受限，不能宣称已经完成独立对照。
+Without isolated execution, declare the evaluation capability limited and do not claim an independent comparison was completed.
 
-效果不好时先按 [评估规范](references/evaluation.md) 查明原因，不直接追加规则。只有 Skill 的流程、判断原则或接口确实导致失败时，才修改适用于同类任务的规则，并用原失败类型复验。
+When results are poor, follow the [Evaluation specification](references/evaluation.md) to find the cause first; do not just append rules. Only when the Skill's flow, judgement principles or interfaces are actually responsible do you change rules intended to apply to similar tasks, and re-verify with the same failure type.
 
-## 兼容与发布
+## Compatibility and publishing
 
-发布前读 [兼容性](references/compatibility.md) 和 [GitHub 发布](references/publishing.md)。README 面向使用者，说明价值、安装、配置、兼容范围、数据边界和输出，不复制 Agent 的内部执行步骤。GitHub 安装部分同时提供“把仓库地址交给 Agent”和 `npx skills add` 两个入口。
+Before release, read [Compatibility](references/compatibility.md) and [GitHub publishing](references/publishing.md). The README is for end users: state the value, installation, configuration, compatibility scope, data boundaries and output; do not copy the Agent's internal execution steps. The GitHub install section provides both "hand the repo URL to the Agent" and `npx skills add` as entry points.
 
-严格校验通过后打包：
+After strict validation passes, package:
 
 ```text
 <python> <oil-skill-creator>/scripts/package_skill.py <skill-path> --public --strict --weak-model --universal
 ```
 
-打包使用稳定排序和固定时间戳，默认排除 Git、虚拟环境、缓存、evals 和运行 workspace。Review 模式不得执行发布；整改模式只在用户要求交付发布包时执行。
+Packaging uses stable ordering and fixed timestamps; by default it excludes `.git`, virtual environments, caches, `evals` and the run workspace. Review mode must not publish; remediate mode only publishes when the user asks for a release package.
 
-## 完成标准
+## Definition of done
 
-- 创建：价值成立，主流程可执行，静态校验通过，效果证据与未验证项已说明。
-- 整改：快照存在，P0/P1 已处理或明确接受，相关回归测试和对照评估完成，没有覆盖无关内容。
-- Review：结论有证据，缺陷与取舍分开，给出按优先级排列的最小整改方案，没有修改外部状态。
+- Create: the value holds, the main flow is executable, static validation passes, the outcome evidence and the items that remain unverified are documented.
+- Remediate: a snapshot exists, P0/P1 items have been handled or explicitly accepted, related regression tests and comparison evaluation are complete, and unrelated content has not been overwritten.
+- Review: each conclusion has evidence, defects and trade-offs are separated, a priority-ordered minimum remediation plan is provided, and no external state has been modified.
 
-交付时只报告文件路径、主要能力、程序与测试结果、已确认的兼容范围、效果证据和剩余风险。不要复述整个 Skill，也不要把执行过程写回正式文件。
+On delivery, report only the file paths, main capabilities, program and test results, confirmed compatibility scope, outcome evidence and remaining risk. Do not restate the whole Skill, and do not write the execution process back into the formal files.

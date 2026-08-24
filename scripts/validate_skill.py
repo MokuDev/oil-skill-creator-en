@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Agent Skill 产品质量静态检查。
+"""Agent Skill product-quality static checks.
 
-只使用 Python 标准库，确保同一套首次使用检查可以在 macOS、Windows
-和 Linux 上运行。
+Uses only the Python standard library so that the same first-use checks can
+run on macOS, Windows and Linux.
 """
 
 from __future__ import annotations
@@ -40,11 +40,17 @@ RESOURCE_CODE_RE = re.compile(
     r"`((?:scripts|references|assets|tests)/[^`\s]+)`"
 )
 HISTORY_HEADING_RE = re.compile(
-    r"^\s{0,3}#{1,6}\s*(?:changelog|change\s+log|更新记录|修改记录|修复记录|版本历史)\s*$",
+    r"^\s{0,3}#{1,6}\s*(?:changelog|change\s+log|update\s+log|change\s+history|"
+    r"\u66f4\u65b0\u8bb0\u5f55|\u4fee\u6539\u8bb0\u5f55|\u4fee\u590d\u8bb0\u5f55|\u7248\u672c\u5386\u53f2)"
+    r"\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
 HISTORY_SENTENCE_RE = re.compile(
-    r"(?:本次(?:修改|修复|更新)(?:了|内容|包括)|上一次任务|上个(?:案例|任务)|previous\s+task\s+fix)",
+    r"(?:"
+    r"previous\s+task\s+fix|last\s+run\s+fix|in\s+a\s+previous\s+(?:task|run)"
+    r"|\u672c\u6b21(?:\u4fee\u6539|\u4fee\u590d|\u66f4\u65b0)(?:\u4e86|\u5185\u5bb9|\u5305\u62ec)"
+    r"|\u4e0a\u4e00\u6b21\u4efb\u52a1|\u4e0a\u4e2a(?:\u6848\u4f8b|\u4efb\u52a1)"
+    r")",
     re.IGNORECASE,
 )
 PERSONAL_PATH_PATTERNS = (
@@ -228,14 +234,15 @@ def _strip_scalar(value: str) -> str:
 
 
 def parse_frontmatter(raw: str) -> tuple[dict[str, str], str]:
-    """解析 Skill frontmatter 使用的顶层标量字段。
+    """Parse the top-level scalar fields used by a Skill frontmatter.
 
-    这里不实现通用 YAML，只支持校验所需的普通、引号、折叠和字面量顶层标量。
+    This is not a general YAML implementation; it only supports plain, quoted,
+    folded and literal top-level scalars needed for validation.
     """
 
     match = FRONTMATTER_RE.match(raw)
     if not match:
-        raise ValueError("SKILL.md 缺少有效的 YAML frontmatter")
+        raise ValueError("SKILL.md is missing a valid YAML frontmatter")
 
     lines = match.group("yaml").splitlines()
     result: dict[str, str] = {}
@@ -314,14 +321,14 @@ def _read_text(path: Path, report: AuditReport, skill_path: Path) -> str | None:
         report.add(
             "error",
             "text.encoding",
-            "文本文件不是 UTF-8 编码",
+            "text file is not UTF-8 encoded",
             _relative(skill_path, path),
         )
     except OSError as exc:
         report.add(
             "error",
             "file.read",
-            f"无法读取文件：{exc}",
+            f"could not read file: {exc}",
             _relative(skill_path, path),
         )
     return None
@@ -418,40 +425,40 @@ def _check_readability(
         "heading": 3 if weak_model else 4,
         "list": 3 if weak_model else 4,
     }
-    profile = "弱模型门槛" if weak_model else "默认门槛"
+    profile = "weak-model threshold" if weak_model else "default threshold"
     if len(lines) > limits["lines"]:
         report.add(
             "warning",
             "readability.skill-too-long",
-            f"SKILL.md 正文为 {len(lines)} 行，超过{profile} {limits['lines']} 行；将只在特定阶段使用的细节移到 references",
+            f"SKILL.md body is {len(lines)} lines, exceeding the {profile} of {limits['lines']}; move stage-specific detail into references",
             "SKILL.md",
         )
     if max_section_lines > limits["section"]:
         report.add(
             "warning",
             "readability.section-too-long",
-            f"最长章节连续 {max_section_lines} 行，超过{profile} {limits['section']} 行；增加局部标题，或将阶段细节移到 references",
+            f"longest section is {max_section_lines} lines, exceeding the {profile} of {limits['section']}; add subheadings or move stage detail into references",
             "SKILL.md",
         )
     if max_paragraph_chars > limits["paragraph"]:
         report.add(
             "warning",
             "readability.long-paragraph",
-            f"最长段落约 {max_paragraph_chars} 个有效字符，超过{profile} {limits['paragraph']}；拆成单动作指令",
+            f"longest paragraph is roughly {max_paragraph_chars} normalized chars, exceeding the {profile} of {limits['paragraph']}; split into single-action instructions",
             "SKILL.md",
         )
     if max_heading_depth > limits["heading"]:
         report.add(
             "warning",
             "readability.heading-depth",
-            f"标题深度达到 {max_heading_depth}，超过{profile} {limits['heading']}；减少层级跳转",
+            f"heading depth reaches {max_heading_depth}, exceeding the {profile} of {limits['heading']}; reduce nesting",
             "SKILL.md",
         )
     if max_list_depth > limits["list"]:
         report.add(
             "warning",
             "readability.list-depth",
-            f"列表嵌套达到 {max_list_depth} 层，超过{profile} {limits['list']}；改为顺序步骤或局部分支",
+            f"list nesting reaches {max_list_depth}, exceeding the {profile} of {limits['list']}; prefer sequential steps or local branches",
             "SKILL.md",
         )
 
@@ -514,7 +521,7 @@ def _check_information_architecture(
         report.add(
             "warning",
             "layer.reference-unreachable",
-            "参考资料无法从 SKILL.md 到达；补充读取时机或删除该文件",
+            "reference cannot be reached from SKILL.md; add the read trigger or remove the file",
             _relative(skill_path, item),
         )
 
@@ -523,7 +530,7 @@ def _check_information_architecture(
             report.add(
                 "warning",
                 "layer.root-markdown",
-                "根目录 Markdown 应移入 references，或说明其必须位于根目录的产品职责",
+                "root-level Markdown should be moved into references, or its root-level product role must be documented",
                 item.name,
             )
 
@@ -532,14 +539,14 @@ def _check_information_architecture(
         text = markdown_texts.get(item, "")
         reference_chars += len(text)
         if len(text.splitlines()) > 300 and not re.search(
-            r"^#{1,3}\s+(?:目录|table of contents|contents)\s*$",
+            r"^#{1,3}\s+(?:\u76ee\u5f55|table\s+of\s+contents|contents|overview)\s*$",
             text,
             re.IGNORECASE | re.MULTILINE,
         ):
             report.add(
                 "warning",
                 "layer.large-reference-no-toc",
-                "参考资料超过 300 行但没有目录",
+                "reference exceeds 300 lines but has no table of contents",
                 _relative(skill_path, item),
             )
 
@@ -580,7 +587,7 @@ def _check_duplicate_markdown(
         report.add(
             "warning",
             "content.duplicate-exact",
-            f"与 {_relative(skill_path, previous.path)}:{previous.line} 重复；只保留一处完整规则，其余位置改为链接",
+            f"duplicates {_relative(skill_path, previous.path)}:{previous.line}; keep one full copy and turn the other location into a link",
             _relative(skill_path, block.path),
             block.line,
         )
@@ -608,7 +615,7 @@ def _check_duplicate_markdown(
                 report.add(
                     "warning",
                     "content.duplicate-near",
-                    f"与 {_relative(skill_path, left.path)}:{left.line} 高度相似；合并内容，并从另一处链接过去",
+                    f"highly similar to {_relative(skill_path, left.path)}:{left.line}; merge the content and link from the other location",
                     _relative(skill_path, right.path),
                     right.line,
                 )
@@ -632,14 +639,16 @@ def _check_markdown_content(
             for line in text.splitlines()
             if HISTORY_SENTENCE_RE.search(line)
             and not re.search(
-                r"不要|不得|禁止|避免|不能|do not|never", line, re.IGNORECASE
+                r"(?:\u4e0d\u8981|\u4e0d\u5f97|\u7981\u6b62|\u907f\u514d|\u4e0d\u80fd|do\s+not|never)",
+                line,
+                re.IGNORECASE,
             )
         ]
         if HISTORY_HEADING_RE.search(text) or history_lines:
             report.add(
                 "error",
                 "content.history",
-                "正式文档包含修改记录或单次修复叙述；只保留当前通用规则",
+                "formal docs contain change-log entries or single-fix narratives; keep only the current general rule",
                 relative,
             )
 
@@ -672,7 +681,7 @@ def _check_sensitive_content(
             report.add(
                 "error",
                 "security.sensitive-file",
-                "Skill 包含高风险凭据文件；改为系统凭据存储、环境变量或不含密钥的模板",
+                "Skill contains a high-risk credential file; switch to system credential storage, env vars, or a template without secrets",
                 relative.as_posix(),
             )
 
@@ -685,7 +694,7 @@ def _check_sensitive_content(
                 report.add(
                     "error",
                     "content.personal-path",
-                    f"文件包含具体用户目录：{match.group(0)}；改为配置参数、环境变量或平台目录解析",
+                    f"file contains a concrete user directory: {match.group(0)}; switch to config parameters, env vars or platform directory resolution",
                     relative,
                     _line_number(text, match.start()),
                 )
@@ -698,7 +707,7 @@ def _check_sensitive_content(
                 report.add(
                     "error",
                     "security.embedded-secret",
-                    f"发现疑似硬编码的 {label}",
+                    f"found a likely hardcoded {label}",
                     relative,
                     _line_number(text, match.start()),
                 )
@@ -711,7 +720,7 @@ def _check_sensitive_content(
             report.add(
                 "error",
                 "security.plaintext-secret",
-                f"发现疑似明文凭据赋值：{match.group('name')}",
+                f"found a likely plaintext credential assignment: {match.group('name')}",
                 relative,
                 _line_number(text, match.start()),
             )
@@ -727,7 +736,7 @@ def _check_sensitive_content(
             report.add(
                 "error",
                 "security.plaintext-secret",
-                f"发现疑似 YAML 多行明文凭据：{match.group('name')}",
+                f"found a likely YAML multi-line plaintext credential: {match.group('name')}",
                 relative,
                 _line_number(text, match.start()),
             )
@@ -751,7 +760,7 @@ def _check_host_neutral(
                 report.add(
                     "error",
                     "compatibility.host-coupling",
-                    "通用 Skill 的正式文档包含具体宿主品牌；改写为能力描述，或明确改为宿主专用 Skill",
+                    "generic Skill formal docs mention a specific host brand; rewrite as a capability description, or explicitly mark the Skill as host-only",
                     _relative(skill_path, path),
                     _line_number(text, match.start()),
                 )
@@ -764,7 +773,7 @@ def _check_host_neutral(
             report.add(
                 "error",
                 "compatibility.host-specific-path",
-                "通用 Skill 包含宿主品牌路径；将适配器移出通用包或明确改为宿主专用 Skill",
+                "generic Skill contains a host-brand path; move the adapter out of the generic package or explicitly mark the Skill as host-only",
                 relative.as_posix(),
             )
     report.metrics["host_coupling_mentions"] = mentions
@@ -798,7 +807,7 @@ def _check_resource_links(
             report.add(
                 "warning",
                 "resource.absolute-link",
-                f"本地资源使用了绝对路径：{target}",
+                f"local resource uses an absolute path: {target}",
                 _relative(skill_path, skill_md),
                 _line_number(body, offset),
             )
@@ -810,7 +819,7 @@ def _check_resource_links(
             report.add(
                 "error",
                 "resource.outside-skill",
-                f"资源引用越出了 Skill 目录：{target}",
+                f"resource reference escapes the Skill directory: {target}",
                 _relative(skill_path, skill_md),
                 _line_number(body, offset),
             )
@@ -820,9 +829,9 @@ def _check_resource_links(
                 "error" if explicit_link else "warning",
                 "resource.missing",
                 (
-                    f"明确链接的资源不存在：{target}"
+                    f"explicitly linked resource does not exist: {target}"
                     if explicit_link
-                    else f"代码片段引用的资源不在当前 Skill 中，请确认是否属于外部 Skill：{target}"
+                    else f"code-fenced resource is not in the current Skill; confirm whether it belongs to an external Skill: {target}"
                 ),
                 _relative(skill_path, skill_md),
                 _line_number(body, offset),
@@ -848,7 +857,7 @@ def _markdown_section(text: str, markers: tuple[str, ...]) -> str:
 def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
     readme = skill_path / "README.md"
     if not readme.is_file():
-        report.add("error", "readme.missing", "公开 Skill 缺少 README.md", "README.md")
+        report.add("error", "readme.missing", "public Skill is missing README.md", "README.md")
         return
 
     text = _read_text(readme, report, skill_path)
@@ -862,13 +871,31 @@ def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
     first_section = re.split(r"^##\s+", text, maxsplit=1, flags=re.MULTILINE)[0]
     intro_text = re.sub(r"[#*_`<>\[\]()\s-]+", "", first_section)
     required_groups = {
-        "安装": ("安装", "install", "快速开始", "quickstart"),
-        "使用": ("使用", "usage", "快速开始", "quickstart"),
-        "配置": ("配置", "config", "setup", "初始化", "apikey", "无需额外配置"),
-        "兼容性或依赖": (
-            "兼容",
-            "依赖",
-            "运行环境",
+        "installation": (
+            "\u5b89\u88c5",
+            "install",
+            "\u5feb\u901f\u5f00\u59cb",
+            "quickstart",
+        ),
+        "usage": (
+            "\u4f7f\u7528",
+            "usage",
+            "\u5feb\u901f\u5f00\u59cb",
+            "quickstart",
+        ),
+        "configuration": (
+            "\u914d\u7f6e",
+            "config",
+            "setup",
+            "\u521d\u59cb\u5316",
+            "apikey",
+            "no extra configuration",
+            "\u65e0\u9700\u989d\u5916\u914d\u7f6e",
+        ),
+        "compatibility or dependencies": (
+            "\u517c\u5bb9",
+            "\u4f9d\u8d56",
+            "\u8fd0\u884c\u73af\u5883",
             "compat",
             "requirement",
             "support",
@@ -878,13 +905,20 @@ def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
         ),
     }
     if len(intro_text) < 30 and not any(
-        any(marker in heading for marker in ("作用", "有什么用", "简介", "为什么", "overview", "what"))
+        any(marker in heading for marker in (
+            "\u4f5c\u7528",
+            "\u6709\u4ec0\u4e48\u7528",
+            "\u7b80\u4ecb",
+            "\u4e3a\u4ec0\u4e48",
+            "overview",
+            "what",
+        ))
         for heading in headings
     ):
         report.add(
             "error",
             "readme.value-missing",
-            "README 开头没有清楚说明 Skill 的价值或作用",
+            "README opening does not clearly state the Skill's value or purpose",
             "README.md",
         )
     for label, markers in required_groups.items():
@@ -892,23 +926,32 @@ def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
             report.add(
                 "error",
                 "readme.section-missing",
-                f"README 没有讲清“{label}”相关内容",
+                f"README does not cover '{label}'",
                 "README.md",
             )
 
     if not any(
-        any(marker in heading for marker in ("边界", "隐私", "数据", "权限", "privacy", "security"))
+        any(marker in heading for marker in (
+            "\u8fb9\u754c",
+            "\u9690\u79c1",
+            "\u6570\u636e",
+            "\u6743\u9650",
+            "privacy",
+            "security",
+            "scope",
+            "boundary",
+        ))
         for heading in headings
     ):
         report.add(
             "warning",
             "readme.boundary-missing",
-            "README 没有单独说明适用边界、数据或权限",
+            "README does not separately state the scope, data handling, or permissions",
             "README.md",
         )
 
     install_section = _markdown_section(
-        text, ("安装", "install", "快速开始", "quickstart")
+        text, ("\u5b89\u88c5", "install", "\u5feb\u901f\u5f00\u59cb", "quickstart")
     )
     github_repository = re.search(
         r"https?://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?",
@@ -916,18 +959,18 @@ def _check_public_readme(skill_path: Path, report: AuditReport) -> None:
         re.IGNORECASE,
     )
     if github_repository:
-        if not re.search(r"\b(?:agent|ai)\b|智能体|助手", install_section, re.IGNORECASE):
+        if not re.search(r"\b(?:agent|ai)\b|\u667a\u80fd\u4f53|\u52a9\u624b", install_section, re.IGNORECASE):
             report.add(
                 "warning",
                 "readme.install-agent-missing",
-                "GitHub 安装说明没有提供把仓库地址交给 Agent 的入口",
+                "GitHub install instructions do not give an entry point that hands the repo URL to the Agent",
                 "README.md",
             )
         if not re.search(r"\bnpx\s+skills\s+add\b", install_section, re.IGNORECASE):
             report.add(
                 "warning",
                 "readme.install-command-missing",
-                "GitHub 安装说明没有提供 npx skills add 命令",
+                "GitHub install instructions do not include the `npx skills add` command",
                 "README.md",
             )
 
@@ -949,7 +992,7 @@ def _check_eval_schema(skill_path: Path, name: str, report: AuditReport) -> None
         report.add(
             "warning",
             "evals.empty",
-            "evals/evals.json 为空；补充真实测试，或者删除没有使用的 evals 目录",
+            "evals/evals.json is empty; add real tests or remove the unused evals directory",
             "evals/evals.json",
         )
 
@@ -963,15 +1006,15 @@ def audit_skill(
     path = Path(skill_path).expanduser().resolve()
     report = AuditReport(str(path))
     if not path.exists():
-        report.add("error", "skill.missing", "Skill 目录不存在")
+        report.add("error", "skill.missing", "Skill directory does not exist")
         return report
     if not path.is_dir():
-        report.add("error", "skill.not-directory", "目标不是目录")
+        report.add("error", "skill.not-directory", "target is not a directory")
         return report
 
     skill_md = path / "SKILL.md"
     if not skill_md.is_file():
-        report.add("error", "skill-md.missing", "缺少 SKILL.md", "SKILL.md")
+        report.add("error", "skill-md.missing", "missing SKILL.md", "SKILL.md")
         return report
 
     raw = _read_text(skill_md, report, path)
@@ -999,61 +1042,83 @@ def audit_skill(
         report.add(
             "error",
             "frontmatter.unexpected-key",
-            "frontmatter 包含不支持的字段：" + ", ".join(unexpected),
+            "frontmatter contains unsupported fields: " + ", ".join(unexpected),
             "SKILL.md",
         )
 
     name = frontmatter.get("name", "").strip()
     description = frontmatter.get("description", "").strip()
     if not name:
-        report.add("error", "frontmatter.name-missing", "缺少 name", "SKILL.md")
+        report.add("error", "frontmatter.name-missing", "missing name", "SKILL.md")
     elif not NAME_RE.fullmatch(name):
         report.add(
             "error",
             "frontmatter.name-invalid",
-            "name 必须使用 kebab-case，且不能连续或首尾使用连字符",
+            "name must be kebab-case, with no consecutive or leading/trailing hyphens",
             "SKILL.md",
         )
     elif len(name) > 64:
-        report.add("error", "frontmatter.name-too-long", "name 超过 64 个字符", "SKILL.md")
+        report.add("error", "frontmatter.name-too-long", "name exceeds 64 characters", "SKILL.md")
     elif path.name != name:
         report.add(
             "warning",
             "skill.directory-name",
-            f"目录名“{path.name}”与 name“{name}”不一致",
+            f"directory name '{path.name}' does not match frontmatter name '{name}'",
             "SKILL.md",
         )
 
     if not description:
-        report.add("error", "frontmatter.description-missing", "缺少 description", "SKILL.md")
+        report.add("error", "frontmatter.description-missing", "missing description", "SKILL.md")
     else:
         if len(description) > 1024:
             report.add(
                 "error",
                 "frontmatter.description-too-long",
-                "description 超过 1024 个字符",
+                "description exceeds 1024 characters",
                 "SKILL.md",
             )
         if "<" in description or ">" in description:
             report.add(
                 "error",
                 "frontmatter.description-angle-bracket",
-                "description 不能包含尖括号",
+                "description must not contain angle brackets",
                 "SKILL.md",
             )
         lowered = description.lower()
-        if not any(marker in lowered for marker in ("使用", "触发", "当用户", "use when", "when the user", "whenever")):
+        if not any(
+            marker in lowered
+            for marker in (
+                "\u4f7f\u7528",
+                "\u89e6\u53d1",
+                "\u5f53\u7528\u6237",
+                "use when",
+                "when the user",
+                "whenever",
+                "trigger",
+            )
+        ):
             report.add(
                 "warning",
                 "trigger.positive-boundary",
-                "description 没有清楚说明何时触发",
+                "description does not clearly state when to trigger",
                 "SKILL.md",
             )
-        if not any(marker in lowered for marker in ("不要", "不用于", "仅在", "仅当", "do not", "not for", "only when")):
+        if not any(
+            marker in lowered
+            for marker in (
+                "\u4e0d\u8981",
+                "\u4e0d\u7528\u4e8e",
+                "\u4ec5\u5728",
+                "\u4ec5\u5f53",
+                "do not",
+                "not for",
+                "only when",
+            )
+        ):
             report.add(
                 "warning",
                 "trigger.negative-boundary",
-                "description 没有清楚说明相似场景何时不要触发",
+                "description does not clearly state when similar scenarios should not trigger",
                 "SKILL.md",
             )
 
@@ -1061,7 +1126,7 @@ def audit_skill(
         report.add(
             "warning",
             "content.placeholder",
-            "SKILL.md 仍包含待填写占位符",
+            "SKILL.md still contains unfilled placeholders",
             "SKILL.md",
         )
     _check_resource_links(path, skill_md, body, report)
@@ -1099,7 +1164,7 @@ def audit_skill(
             report.add(
                 "warning",
                 "readme.placeholder",
-                "README 仍包含待填写占位符",
+                "README still contains unfilled placeholders",
                 "README.md",
             )
 
@@ -1109,12 +1174,12 @@ def audit_skill(
         if item.is_file() and item.suffix.lower() in {".sh", ".swift", ".applescript"}
     ]
     if platform_specific and readme_text and not re.search(
-        r"macOS|Windows|Linux|兼容|运行环境|平台", readme_text, re.IGNORECASE
+        r"macOS|Windows|Linux|\u517c\u5bb9|\u8fd0\u884c\u73af\u5883|\u5e73\u53f0|compat", readme_text, re.IGNORECASE
     ):
         report.add(
             "warning",
             "compatibility.undeclared",
-            "存在平台相关脚本，但 README 没有说明支持平台",
+            "platform-specific scripts are present but the README does not state which platforms are supported",
             "README.md",
         )
     report.metrics["platform_specific_files"] = len(platform_specific)
@@ -1136,27 +1201,27 @@ def _print_human(report: AuditReport, strict: bool) -> None:
     summary = report.to_dict(strict)["summary"]
     status = "PASS" if report.passed(strict) else "FAIL"
     print(
-        f"{status}：{summary['errors']} 个错误，{summary['warnings']} 个警告；"
-        f"SKILL.md 共 {report.metrics.get('skill_md_lines', 0)} 行"
+        f"{status}: {summary['errors']} error(s), {summary['warnings']} warning(s); "
+        f"SKILL.md is {report.metrics.get('skill_md_lines', 0)} lines"
     )
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="检查 Agent Skill 的结构与产品质量")
-    parser.add_argument("skill_path", help="Skill 目录")
-    parser.add_argument("--public", action="store_true", help="执行公开发布 README 检查")
+    parser = argparse.ArgumentParser(description="check the structure and product quality of an Agent Skill")
+    parser.add_argument("skill_path", help="Skill directory")
+    parser.add_argument("--public", action="store_true", help="run the public-release README checks")
     parser.add_argument(
         "--weak-model",
         action="store_true",
-        help="使用面向较弱模型的严格结构门槛",
+        help="use the strict structural thresholds aimed at weaker models",
     )
-    parser.add_argument("--strict", action="store_true", help="将警告也视为失败")
+    parser.add_argument("--strict", action="store_true", help="treat warnings as failures too")
     parser.add_argument(
         "--universal",
         action="store_true",
-        help="拒绝在通用文档和路径中写死具体宿主品牌",
+        help="refuse to hardcode specific host brands in generic docs and paths",
     )
-    parser.add_argument("--json", action="store_true", dest="as_json", help="输出 JSON")
+    parser.add_argument("--json", action="store_true", dest="as_json", help="emit JSON output")
     return parser
 
 

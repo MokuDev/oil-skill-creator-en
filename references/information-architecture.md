@@ -1,75 +1,75 @@
-# 信息架构与弱模型可读性
+# Information architecture and weak-model readability
 
-## 每类内容只放一处
+## One place per type of content
 
-| 层级 | 唯一职责 |
+| Layer | Sole responsibility |
 | --- | --- |
-| frontmatter | 什么时候触发、什么时候不触发，以及必要的兼容条件 |
-| `SKILL.md` | 模式、顺序、决策、分支、停止条件和资源读取时机 |
-| `references/` | 特定阶段才需要的清单、数据格式、解释和平台细节 |
-| `scripts/` | 确定、重复、可验证的执行 |
-| `assets/` | 可复用的页面、样式、静态模板和其他非指令资源 |
-| `README.md` | 面向人的价值、安装、配置、使用和边界 |
-| 外部 workspace | 输出、反馈、对比报告、Review 和版本比较 |
+| frontmatter | When to trigger, when not to, and required compatibility conditions |
+| `SKILL.md` | Modes, ordering, decisions, branches, stop conditions and when to read resources |
+| `references/` | Checklists, data formats, explanations and platform details only used in specific stages |
+| `scripts/` | Deterministic, repeatable, verifiable execution |
+| `assets/` | Reusable pages, styles, static templates and other non-instruction resources |
+| `README.md` | The user-facing value, installation, configuration, usage and boundaries |
+| External workspace | Output, feedback, comparison reports, reviews and version diffs |
 
-Agent 只读取 `SKILL.md` 时，就应该能够选择正确路径，不需要先读完所有参考资料。`SKILL.md` 不复制详细检查表和数据格式；参考资料不再解释触发条件；README 不复制 Agent 的内部流程。
+Reading only `SKILL.md` should already let the Agent pick the correct path, without having to load every reference first. `SKILL.md` does not copy detailed checklists or data formats; references do not re-state trigger conditions; the README does not copy the Agent's internal flow.
 
-拆分文件不会自动节省 Token。只有入口清楚、按需读取，并且同一内容没有重复说明时，分层才有价值。
+Splitting files does not automatically save tokens. Layering only helps when the entry point is clear, references are read on demand, and the same content is not restated.
 
-## 文件拆分判断
+## When to split into a new file
 
-只在以下情况新增文件：
+Only create a new file when:
 
-- 内容只在某个模式、阶段、平台或框架使用；
-- 程序可以直接执行而不需要加载源码；
-- 可复用页面或静态模板需要独立维护、预览或原样复制；
-- 程序需要独立回归测试；
-- 主文件不拆分就无法保持清楚的分支和停止条件。
+- Content is only used in one mode, stage, platform or framework;
+- A program can execute it without loading source code;
+- A reusable page or static template needs independent maintenance, preview or copy-as-is;
+- The program needs its own regression test;
+- The main file cannot keep branches and stop conditions clear without splitting.
 
-不要为了目录看起来完整而创建空的 `references/`、`assets/`、`tests/` 或 `evals/`。资源没有明确的读取入口、执行入口或用户用途时，补上入口或者删除。
+Do not create empty `references/`, `assets/`, `tests/` or `evals/` directories just to look complete. When a resource has no explicit read entry, execution entry or user purpose, add the entry or delete it.
 
-## 写给能力较弱的模型
+## Writing for weaker models
 
-- 一条指令只包含一个主要动作。
-- 明确动作主体、输入、输出和停止条件。
-- 把分支和禁止项写在对应步骤旁。
-- 同一概念始终使用同一个名称。
-- 控制标题深度和列表嵌套，避免多层跳转。
-- 不依赖“如上”“照旧”等隐含指代。
-- 示例使用最小安全默认值，不展示会造成错误默认的完整配置。
-- 程序返回明确状态和下一步，不让模型解析冗长日志。
+- One instruction carries one primary action;
+- Make the subject, input, output and stop condition explicit;
+- Place branches and prohibitions next to the step they belong to;
+- Use the same name for the same concept every time;
+- Control heading depth and list nesting; avoid multi-level jumps;
+- Do not rely on implicit references like "as above" or "same as before";
+- Examples use minimal safe defaults; do not show full configurations that establish wrong defaults;
+- Programs return explicit status and the next step, not long logs for the model to parse.
 
-短并不等于易懂。删除条件、主体或输出会增加猜测和返工；重复完整规则也会让模型不知道哪一份有效。
+Shorter is not automatically clearer. Cutting conditions, subjects or outputs invites guessing and rework; restating the full rule also leaves the model unsure which version is current.
 
-## 程序与 Agent 的边界
+## Program vs. Agent boundary
 
-程序适合检查结构、链接、数据格式、命名、重复、路径、密钥、固定目录、统计和可重复生成的归档。Agent 负责判断价值、语义冲突、是否过度约束、主观质量和没有覆盖的例外。
+Programs are well suited to checking structure, links, data formats, naming, duplication, paths, secrets, fixed directories, statistics, and reproducible archives. Agents judge value, semantic conflict, over-constraint, subjective quality and unaddressed exceptions.
 
-程序检查通过只表示已知机器规则没有失败。Review 必须继续检查产品承诺和真实行为，不能把 0 warning 当作效果证明。
+A passing program check only means known machine rules did not fail. Review must keep checking product promises and real behavior; zero warnings is not proof of effect.
 
-## 静态复杂度检查
+## Static complexity check
 
-`scripts/validate_skill.py` 检查：
+`scripts/validate_skill.py` checks:
 
-- SKILL.md 行数、章节、段落、标题和列表深度；
-- references 是否能从 SKILL.md 到达；
-- 大型 reference 是否提供目录；
-- 根目录是否堆放职责不明的 Markdown；
-- Markdown 文档之间的长段精确或近似重复；
-- 当前目录可读取的常见文本、源码和配置中的具体用户目录、常见密钥格式、私钥块与可疑明文凭据赋值；
-- `.env`、`credentials.json`、私钥文件等不应进入 Skill 的高风险凭据文件；
-- 评估数据格式和文档的大致 Token 规模。
+- `SKILL.md` line count, section length, paragraph length, heading depth and list nesting;
+- Whether `references/` can be reached from `SKILL.md`;
+- Whether large references provide a table of contents;
+- Whether the root directory is piled with Markdown whose role is unclear;
+- Long, exact or near-exact duplication across Markdown documents;
+- Concrete user directories, common secret formats, private key blocks and suspicious plaintext credential assignments in the text, source and config files the validator can read;
+- High-risk credential files that should not enter a Skill, such as `.env`, `credentials.json`, private key files;
+- Evaluation data format and rough token scale of the docs.
 
-这些指标只能发现理解风险。程序无法证明某个模型会选对模式或做出正确语义判断。
+These signals only surface comprehension risk. The program cannot prove a model will pick the right mode or make the correct semantic judgement.
 
-## 弱模型试跑
+## Weak-model dry run
 
-使用计划支持的最低能力模型，在不提供作者上下文的情况下独立运行：
+Run the lowest-capability model the plan supports, independently and without author context:
 
-1. 一个完整主流程；
-2. 一个容易走错的整改或停止分支；
-3. 一个容易混淆但不应触发的任务。
+1. One full main flow;
+2. One error-prone remediation or stop branch;
+3. One easily confused but should-not-trigger task.
 
-检查它是否选择正确模式、只读取所需资源、调用既定脚本、没有重复实现程序逻辑，并在应该停止的位置停止。失败时先改入口、命名、分支位置或程序接口，不要立即追加更多解释。
+Check that it picks the right mode, reads only the required resources, calls the prescribed scripts, does not re-implement program logic, and stops where it should. On failure, fix the entry, naming, branch placement or program interface first; do not append more explanation immediately.
 
-如果弱模型不在支持范围，README 和 compatibility 应明确说明，不要为了宣称兼容而无限扩写 Skill。
+When the weak model is not within supported scope, document it clearly in the README and `compatibility`; do not endlessly expand the Skill just to claim compatibility.
