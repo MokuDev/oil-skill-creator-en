@@ -94,8 +94,8 @@ Check the entry point, modes, terminology, where branches sit and when resources
 
 | Tool | Purpose |
 | --- | --- |
-| `scaffold_skill.py` | Preview and create a minimal Skill skeleton; refuses to overwrite an existing directory |
-| `validate_skill.py` | Checks structure, links, duplication, personal paths, plaintext secrets, weak-model risk and host neutrality |
+| `scaffold_skill.py` | Preview and create a minimal Skill skeleton, without empty directories; refuses to overwrite an existing directory |
+| `validate_skill.py` | Checks structure, links, empty directories, duplication, personal paths, plaintext secrets, weak-model risk and host neutrality |
 | `snapshot_skill.py` | Saves an immutable pre-remediation baseline of the old version |
 | `prepare_evaluation.py` | Creates fixed comparison directories for the new version, a regular Agent or the old version |
 | `aggregate_evaluation.py` | Aggregates execution results, timings and inspection data |

@@ -28,6 +28,8 @@ Only create a new file when:
 
 Do not create empty `references/`, `assets/`, `tests/` or `evals/` directories just to look complete. When a resource has no explicit read entry, execution entry or user purpose, add the entry or delete it.
 
+The scaffolder only creates a directory together with its first real file, and the validator reports any directory that holds no file, so an empty directory never reaches delivery unnoticed.
+
 ## Writing for weaker models
 
 - One instruction carries one primary action;
